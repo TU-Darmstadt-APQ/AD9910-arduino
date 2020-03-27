@@ -35,7 +35,7 @@ AD9910::AD9910(int ssPin, int resetPin, int updatePin, int ps0, int ps1, int ps2
   _fancy = 1; // flag to keep track of extra functionality
 }
 
-// alternate constructor function; initializes communication pinouts
+// alternate constructor function only using profile 0; initializes communication pinouts
 AD9910::AD9910(int ssPin, int resetPin, int updatePin, int ps0) // reset = master reset
 {
   RESOLUTION  = 4294967296.0;
@@ -77,12 +77,19 @@ void AD9910::initialize(unsigned long ref, uint8_t divider){
 
   delay(1);
 
+  reg_t cfr1;
+  cfr1.addr = 0x00;
+  cfr1.data.bytes[0] = 0x00;
+  cfr1.data.bytes[1] = 0x00;
+  cfr1.data.bytes[2] = 0x00;  
+  cfr1.data.bytes[3] = 0x00;
+  
   reg_t cfr2;
-  cfr2.addr = 0x02;
+  cfr2.addr = 0x01;
   cfr2.data.bytes[0] = 0x02;
   cfr2.data.bytes[1] = 0x08;
   cfr2.data.bytes[2] = 0x00;  // sync_clk pin disabled; not used
-  cfr2.data.bytes[3] = 0x01;  // enable ASF
+  cfr2.data.bytes[3] = 0x01;  // enable ASF from single tone profiles
 
   reg_t cfr3;
   cfr3.addr = 0x02;
@@ -100,6 +107,7 @@ void AD9910::initialize(unsigned long ref, uint8_t divider){
   auxdac.addr = 0x03;
   auxdac.data.bytes[0] = 0xFF;
 
+  writeRegister(cfr1);
   writeRegister(cfr2);
   writeRegister(cfr3);
   writeRegister(auxdac);
@@ -140,10 +148,13 @@ void AD9910::setFreq(uint32_t freq, uint8_t profile){
   reg_t payload;
   payload.bytes = 8;
   payload.addr = 0x0E + profile;
-  payload.data.block[0] =  _ftw[profile];
+  payload.data.block[0] = _ftw[profile];
   // need to write a way around updating the amplitude/phase words to default here...
   //
-  payload.data.block[1] = 0x3FFF0000;
+  //amp = 16383
+  
+  payload.data.block[1] = (0x3FFF << 16 ) | 0x0000;
+  
 	// actually writes to register
   //AD9910::writeRegister(CFR1Info, CFR1);
   writeRegister(payload);
@@ -151,9 +162,14 @@ void AD9910::setFreq(uint32_t freq, uint8_t profile){
 }
 
 void AD9910::setProfile(uint8_t profile) {
+  _activeProfile = profile;
   digitalWrite(_ps0, bitRead(profile,0));
   digitalWrite(_ps1, bitRead(profile,1));
   digitalWrite(_ps2, bitRead(profile,2));
+}
+
+byte AD9910::getProfile() {
+  return _activeProfile;
 }
 
 /*

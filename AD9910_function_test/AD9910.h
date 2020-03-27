@@ -89,6 +89,8 @@ class AD9910
     //Get currently active profile
     uint8_t getProfile();
 */
+    //Get currently active profile
+    uint8_t getProfile();
     void writeRegister(reg_t payload);
 
   private:
