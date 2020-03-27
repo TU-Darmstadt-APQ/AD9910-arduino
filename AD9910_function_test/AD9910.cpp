@@ -48,8 +48,8 @@ AD9910::AD9910(int ssPin, int resetPin, int updatePin, int ps0) // reset = maste
 
 /* PUBLIC CLASS FUNCTIONS */
 
-// initialize(refClk) - initializes DDS with reference freq, divider
-void AD9910::begin(unsigned long ref, uint8_t divider){
+// initialize(refClk, divider) - initializes DDS with reference freq, divider
+void AD9910::initialize(unsigned long ref, uint8_t divider){
   // sets up the pinmodes for output
   pinMode(_ssPin, OUTPUT);
   pinMode(_resetPin, OUTPUT);
@@ -148,6 +148,12 @@ void AD9910::setFreq(uint32_t freq, uint8_t profile){
   //AD9910::writeRegister(CFR1Info, CFR1);
   writeRegister(payload);
   update();
+}
+
+void AD9910::setProfile(uint8_t profile) {
+  digitalWrite(_ps0, bitRead(profile,0));
+  digitalWrite(_ps1, bitRead(profile,1));
+  digitalWrite(_ps2, bitRead(profile,2));
 }
 
 /*

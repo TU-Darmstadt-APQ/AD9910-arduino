@@ -41,7 +41,7 @@ class AD9910
     AD9910(int ssPin, int resetPin, int updatePin, int ps0, int ps1, int ps2, int osk);
     AD9910(int ssPin, int resetPin, int updatePin, int ps0);
     // Initialize with refIn frequency, and clock multiplier value
-    void begin(unsigned long ref, uint8_t mult);
+    void initialize(unsigned long ref, uint8_t mult);
     // Reset the DDS
     void reset();
     // Update to load newly written settings
@@ -54,6 +54,8 @@ class AD9910
     unsigned long getFTW(uint8_t profile = 0);
     // Sets frequency tuning word
     void setFTW(unsigned long ftw, uint8_t profile = 0);
+    // Sets profile used
+    void setProfile(uint8_t profile = 0);
 /*  *********************** to implement later ***************
     //write scaled amplitude for the selected profile
     void setAmp(double scaledAmp, uint8_t profile = 0);
