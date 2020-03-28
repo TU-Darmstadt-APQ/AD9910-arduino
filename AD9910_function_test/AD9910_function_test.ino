@@ -32,10 +32,16 @@ void setup() {
   DDS.initialize(ref_clk,divider);
   DDS.setFreq(1000000,0);
   DDS.setFreq(2000000,1);
-  DDS.setFreq(3000000,2);
-  DDS.setFreq(4000000,3);
-  DDS.setFreq(5000000,4);
-  DDS.setFreq(6000000,5);
+  DDS.setFreq(1000000,2);
+  DDS.setFreq(2000000,3);
+  DDS.setFreq(1000000,4);
+  DDS.setFreq(2000000,5);
+  DDS.setAmp(1.0,0);
+  DDS.setAmp(0.5,1);
+  DDS.setAmp(1.0,2);
+  DDS.setAmp(0.5,3);
+  DDS.setAmp(1.0,4);
+  DDS.setAmp(0.5,5);
 }
 
 void loop() {

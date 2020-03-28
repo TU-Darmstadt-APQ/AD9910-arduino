@@ -46,26 +46,28 @@ class AD9910
     void reset();
     // Update to load newly written settings
     void update();
-    // Gets current frequency
-    unsigned long getFreq(uint8_t profile = 0);
+    
     // Sets frequency
     void setFreq(unsigned long freq, uint8_t profile = 0);
-    // Gets current frequency tuning word
-    unsigned long getFTW(uint8_t profile = 0);
     // Sets frequency tuning word
     void setFTW(unsigned long ftw, uint8_t profile = 0);
-    // Sets profile used
-    void setProfile(uint8_t profile = 0);
-/*  *********************** to implement later ***************
-    //write scaled amplitude for the selected profile
+    //Sets scaled amplitude
     void setAmp(double scaledAmp, uint8_t profile = 0);
     void setAmpdB(double scaledAmpdB, uint8_t profile = 0);
+    // Sets profile used
+    void setProfile(uint8_t profile = 0);
+
+    //Get Frequency
+    unsigned long getFreq(uint8_t profile = 0);
+    // Gets current frequency tuning word
+    unsigned long getFTW(uint8_t profile = 0);
     // Gets current amplitude
     double getAmp(uint8_t profile = 0);
     // Gets current amplitude in dB
     double getAmpdB(uint8_t profile = 0);
-    // Gets current amplitude tuning word
+    // Gets current amplitude scale factor
     unsigned long getASF(uint8_t profile = 0);
+    /*  *********************** to implement later ***************
     // places DDS in linear sweep mode
     //void linearSweep(unsigned long, unsigned long, unsigned long, byte, unsigned long, byte);
     //enable profile mode
@@ -106,6 +108,8 @@ class AD9910
     bool _profileModeOn, _OSKon;
     // write amplitude tuning word to device
     //void writeAmp(long ampScaleFactor, uint8_t profile);
+    // write Freq/Amp/Phase to profile:
+    void writeProfile(byte profile);
     // DDS frequency resolution
     double RESOLUTION;// = 4294967296; // sets resolution to 2^32 = 32 bits. Using type double to avoid confusion with integer division...
 };

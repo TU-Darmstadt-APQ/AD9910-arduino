@@ -77,40 +77,40 @@ void AD9910::initialize(unsigned long ref, uint8_t divider){
 
   delay(1);
 
-  reg_t cfr1;
-  cfr1.addr = 0x00;
-  cfr1.data.bytes[0] = 0x00;
-  cfr1.data.bytes[1] = 0x00;
-  cfr1.data.bytes[2] = 0x00;  
-  cfr1.data.bytes[3] = 0x00;
+  reg_t _cfr1;
+  _cfr1.addr = 0x00;
+  _cfr1.data.bytes[0] = 0x00;
+  _cfr1.data.bytes[1] = 0x00;
+  _cfr1.data.bytes[2] = 0x00;  
+  _cfr1.data.bytes[3] = 0x00;
   
-  reg_t cfr2;
-  cfr2.addr = 0x01;
-  cfr2.data.bytes[0] = 0x02;
-  cfr2.data.bytes[1] = 0x08;
-  cfr2.data.bytes[2] = 0x00;  // sync_clk pin disabled; not used
-  cfr2.data.bytes[3] = 0x01;  // enable ASF from single tone profiles
+  reg_t _cfr2;
+  _cfr2.addr = 0x01;
+  _cfr2.data.bytes[0] = 0x02;
+  _cfr2.data.bytes[1] = 0x08;
+  _cfr2.data.bytes[2] = 0x00;  // sync_clk pin disabled; not used
+  _cfr2.data.bytes[3] = 0x01;  // enable ASF from single tone profiles
 
-  reg_t cfr3;
-  cfr3.addr = 0x02;
-  cfr3.data.bytes[0] = divider << 1; // pll divider
+  reg_t _cfr3;
+  _cfr3.addr = 0x02;
+  _cfr3.data.bytes[0] = divider << 1; // pll divider
   if (divider == 0){
-    cfr3.data.bytes[1] = 0x40;    // bypass pll
-    cfr3.data.bytes[3] = 0x07;
+    _cfr3.data.bytes[1] = 0x40;    // bypass pll
+    _cfr3.data.bytes[3] = 0x07;
   } else {
-    cfr3.data.bytes[1] = 0x41;    // enable PLL
-    cfr3.data.bytes[3] = 0x05;
+    _cfr3.data.bytes[1] = 0x41;    // enable PLL
+    _cfr3.data.bytes[3] = 0x05;
   }
-  cfr3.data.bytes[2] = 0x3F;
+  _cfr3.data.bytes[2] = 0x3F;
 
-  reg_t auxdac;
-  auxdac.addr = 0x03;
-  auxdac.data.bytes[0] = 0xFF;
+  reg_t _auxdac;
+  _auxdac.addr = 0x03;
+  _auxdac.data.bytes[0] = 0xFF;
 
-  writeRegister(cfr1);
-  writeRegister(cfr2);
-  writeRegister(cfr3);
-  writeRegister(auxdac);
+  writeRegister(_cfr1);
+  writeRegister(_cfr2);
+  writeRegister(_cfr3);
+  writeRegister(_auxdac);
   update();
 
   delay(1);
@@ -136,6 +136,14 @@ void AD9910::update(){
   digitalWrite(_updatePin, LOW);
 }
 
+// setProfile(profile) -- Activates a profile by setting correcponsing profile pins high/low
+void AD9910::setProfile(uint8_t profile) {
+  _activeProfile = profile;
+  digitalWrite(_ps0, bitRead(profile,0));
+  digitalWrite(_ps1, bitRead(profile,1));
+  digitalWrite(_ps2, bitRead(profile,2));
+}
+
 // setFreq(freq) -- writes freq to DDS board, in FTW0
 void AD9910::setFreq(uint32_t freq, uint8_t profile){
   if (profile > 7) {
@@ -145,55 +153,39 @@ void AD9910::setFreq(uint32_t freq, uint8_t profile){
   _freq[profile] = freq;
   _ftw[profile] = round(freq * RESOLUTION / _refClk) ;
 
-  reg_t payload;
-  payload.bytes = 8;
-  payload.addr = 0x0E + profile;
-  payload.data.block[0] = _ftw[profile];
-  // need to write a way around updating the amplitude/phase words to default here...
-  //
-  //amp = 16383
-  
-  payload.data.block[1] = (0x3FFF << 16 ) | 0x0000;
-  
-	// actually writes to register
-  //AD9910::writeRegister(CFR1Info, CFR1);
-  writeRegister(payload);
-  update();
+  AD9910::writeProfile(profile);
 }
 
-void AD9910::setProfile(uint8_t profile) {
-  _activeProfile = profile;
-  digitalWrite(_ps0, bitRead(profile,0));
-  digitalWrite(_ps1, bitRead(profile,1));
-  digitalWrite(_ps2, bitRead(profile,2));
+// Function setFTW -- accepts 32-bit frequency tuning word ftw;
+//      updates instance variables for FTW and Frequency, and writes ftw to DDS.
+void AD9910::setFTW(unsigned long ftw, byte profile){
+    if (profile > 7) {
+        return; //invalid profile, return without doing anything
+    }
+
+    // set freqency and ftw variables
+    _ftw[profile] = ftw;
+    _freq[profile] = ftw * _refClk / RESOLUTION;
+
+    AD9910::writeProfile(profile);
 }
 
-byte AD9910::getProfile() {
-  return _activeProfile;
-}
-
-/*
 void AD9910::setAmp(double scaledAmp, byte profile){
+   // Use a scaledAmplitude between 0 and 1
    if (profile > 7) {
         return; //invalid profile, return without doing anything
    }
 
    _scaledAmp[profile] = scaledAmp;
-   _asf[profile] = round(scaledAmp*4096);
-   _scaledAmpdB[profile] = 20.0*log10(_asf[profile]/4096.0);
+   _asf[profile] = round(scaledAmp*16384.0);  // 14-bit DAC
+   _scaledAmpdB[profile] = 20.0*log10(_asf[profile]/16384.0);
 
-   if (_asf[profile] >= 4096) {
-      _asf[profile]=4095; //write max value
+   if (_asf[profile] >= 16384) {
+      _asf[profile]=16383; //write max value
    } else if (scaledAmp < 0) {
       _asf[profile]=0; //write min value
    }
-
-   AD9910::writeAmp(_asf[profile],profile);
-
-}
-
-void AD9910::setAmp(double scaledAmp){
-  AD9910::setAmp(scaledAmp,0);
+   AD9910::writeProfile(profile);
 }
 
 void AD9910::setAmpdB(double scaledAmpdB, byte profile){
@@ -206,118 +198,66 @@ void AD9910::setAmpdB(double scaledAmpdB, byte profile){
    }
 
    _scaledAmpdB[profile] = scaledAmpdB;
-   _asf[profile] = round(pow(10,scaledAmpdB/20.0)*4096.0);
-   _scaledAmp[profile] = _asf[profile]/4096.0;
+   _asf[profile] = round(pow(10,scaledAmpdB/20.0)*16384.0);
+   _scaledAmp[profile] = _asf[profile]/16384.0;
 
-   if (_asf[profile] >= 4096) {
-      _asf[profile]=4095; //write max value
+   if (_asf[profile] >= 16384) {
+      _asf[profile]=16383; //write max value
    }
 
-   AD9910::writeAmp(_asf[profile],profile);
-
+   AD9910::writeProfile(profile);
 }
-
-void AD9910::setAmpdB(double scaledAmpdB){
-  AD9910::setAmpdB(scaledAmpdB,0);
-}
-
-//Gets current amplitude
-double AD9910::getAmp(byte profile){
-  return _scaledAmp[profile];
-}
-double AD9910::getAmp(){
-  return _scaledAmp[0];
-}
-
-// Gets current amplitude in dB
-double AD9910::getAmpdB(byte profile){
-  return _scaledAmpdB[profile];
-}
-double AD9910::getAmpdB(){
-  return _scaledAmpdB[0];
-}
-
-//Gets current amplitude tuning word
-unsigned long AD9910::getASF(byte profile){
-  return _asf[profile];
-}
-unsigned long AD9910::getASF(){
-  return _asf[0];
-}
-
-
-
-// getFreq() - returns current frequency
-unsigned long AD9910::getFreq(byte profile){
-    return _freq[profile];
-}
-//
-// // getFreq() - returns frequency from profile 0
-// unsigned long AD9910::getFreq(){
-//     return _freq[0];
-// }
-
-// getFTW() -- returns current FTW
-unsigned long AD9910::getFTW(byte profile){
-    return _ftw[profile];
-}
-
-// unsigned long AD9910::getFTW(){
-//     return _ftw[0];
-// }
-
-// Function setFTW -- accepts 32-bit frequency tuning word ftw;
-//      updates instance variables for FTW and Frequency, and writes ftw to DDS.
-void AD9910::setFTW(unsigned long ftw, byte profile){
-
-    if (profile > 7) {
-        return; //invalid profile, return without doing anything
-    }
-
-    // set freqency and ftw variables
-    _ftw[profile] = ftw;
-    _freq[profile] = ftw * _refClk / RESOLUTION;
-
-    // divide up ftw into four bytes
-    byte data[] = { lowByte(ftw >> 24), lowByte(ftw >> 16), lowByte(ftw >> 8), lowByte(ftw)};
-    // register info -- writing four bytes to register 0x04,
-
-    byte registerInfo[] = {0x0B, 4};
-    registerInfo[0] += 2*profile; //select the right register for the commanded profile number
-
-
-    //byte CFR1[] = { 0x00, 0x00, 0x00, 0x00 };
-    //byte CFR1Info[] = {0x00, 4};
-
-    //AD9910::writeRegister(CFR1Info, CFR1);
-    AD9910::writeRegister(registerInfo, data);
-    AD9910::update();
-
-}
-
-// void AD9910::setFTW(unsigned long ftw){
-//   AD9910::setFTW(ftw,0);
-// }
-
-//Enable the profile select mode
-void AD9910::enableProfileMode() {
-  //write 0x01, byte 23 high
-  _profileModeOn = true;
+/*
+void AD9910::enableSyncClck() {
+ //write 0x01, byte 11 high
   byte registerInfo[] = {0x01, 4};
   byte data[] = {0x00, 0x80, 0x09, 0x00};
   AD9910::writeRegister(registerInfo, data);
   AD9910::update();
 }
 
-//Disable the profile select mode
-void AD9910::disableProfileMode() {
-  //write 0x01, byte 23 low
-  _profileModeOn = false;
+void AD9910::disableSyncClck() {
+  //write 0x01, bit 11 low
   byte registerInfo[] = {0x01, 4};
-  byte data[] = {0x00, 0x00, 0x09, 0x00};
+  byte data[] = {0x00, 0x80, 0x01, 0x00};
   AD9910::writeRegister(registerInfo, data);
   AD9910::update();
 }
+*/
+
+
+/////////////////////////////////////////////////////
+///// Get-Functions:
+
+// getFreq() - returns current frequency
+unsigned long AD9910::getFreq(byte profile){
+    return _freq[profile];
+}
+
+// getFTW() -- returns current FTW
+unsigned long AD9910::getFTW(byte profile){
+    return _ftw[profile];
+}
+
+//Gets current amplitude
+double AD9910::getAmp(byte profile){
+  return _scaledAmp[profile];
+}
+
+// Gets current amplitude in dB
+double AD9910::getAmpdB(byte profile){
+  return _scaledAmpdB[profile];
+}
+
+//Gets current amplitude scale factor
+unsigned long AD9910::getASF(byte profile){
+  return _asf[profile];
+}
+
+byte AD9910::getProfile() {
+  return _activeProfile;
+}
+/*
 
 //enable OSK
 void AD9910::enableOSK(){
@@ -339,31 +279,12 @@ void AD9910::disableOSK(){
   AD9910::update();
 }
 
-//return boolean indicating if profile select mode is activated
-boolean AD9910::getProfileSelectMode() {
-  return _profileModeOn;
-}
-
 //return boolean indicating if OSK mode is activated
 boolean AD9910::getOSKMode() {
   return _OSKon;
 }
 
-void AD9910::enableSyncClck() {
- //write 0x01, byte 11 high
-  byte registerInfo[] = {0x01, 4};
-  byte data[] = {0x00, 0x80, 0x09, 0x00};
-  AD9910::writeRegister(registerInfo, data);
-  AD9910::update();
-}
 
-void AD9910::disableSyncClck() {
-  //write 0x01, byte 11 low
-  byte registerInfo[] = {0x01, 4};
-  byte data[] = {0x00, 0x80, 0x01, 0x00};
-  AD9910::writeRegister(registerInfo, data);
-  AD9910::update();
-}
 
 void AD9910::selectProfile(byte profile){
   //Possible improvement: write PS pin states all at once using register masks
@@ -411,22 +332,17 @@ void AD9910::writeRegister(reg_t payload){
 }
 
 /* PRIVATE CLASS FUNCTIONS */
-
-
-/*
-
-void AD9910::writeAmp(long ampScaleFactor, byte profile){
-  byte registerInfo[] = {0x0C, 4};
-
-  registerInfo[0] += 2*profile; //select the right register for the commanded profile number
-
-  // divide up ASF into two bytes, pad with 0s for the phase offset
-  byte atw[] = {lowByte(ampScaleFactor >> 8), lowByte(ampScaleFactor), 0x00, 0x00};
-
-  // actually writes to register
-  AD9910::writeRegister(registerInfo, atw);
-
-  AD9910::update();
-
+void AD9910::writeProfile(byte profile) {
+   reg_t payload;
+   payload.bytes = 8;
+   payload.addr = 0x0E + profile;
+   //Set frequency block:
+   payload.data.block[0] = _ftw[profile];
+   // Set amplitude/phase block:
+   payload.data.block[1] = (_asf[profile] << 16 ) | 0x0000; // Set phase to 0x0000
+   
+   // actually writes to register
+   //AD9910::writeRegister(payload);
+   writeRegister(payload);
+   update();
 }
-*/
