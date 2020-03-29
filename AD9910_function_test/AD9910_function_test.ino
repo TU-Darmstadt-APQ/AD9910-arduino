@@ -10,6 +10,8 @@
 #define PS2PIN 7                        // DDS PROFILE[2] pin. Profile Select Pins. Digital input. Use these pins to select one of eight profiles for the DDS.
 #define IO_UPDATEPIN  9                 // DDS I/O_UPDATE pin. Digital input. A high on this pin transfers the contents of the buffers to the internal registers.
 #define RESETPIN 10                     // DDS MASTER_RESET pin. Digital input. Clears all memory elements and sets registers to default values.
+#define TRIGGERIN 12                    // Pin to trigger the Arduino
+#define TRIGGEROUT 13                   // Pin to trigger events with the Arduino or to trigger the a
 
 int divider=25;                         // System clock is ref clk * divider
 int ref_clk=40000000;                   //Reference clock is 40 MHz
@@ -30,33 +32,40 @@ void setup() {
   delay(10);
   
   DDS.initialize(ref_clk,divider);
-  DDS.setFreq(1000000,0);
+  DDS.setFreq(4000000,0);
   DDS.setFreq(2000000,1);
   DDS.setFreq(1000000,2);
   DDS.setFreq(2000000,3);
   DDS.setFreq(1000000,4);
-  DDS.setFreq(2000000,5);
+  DDS.setFreq(4000000,5);
   DDS.setAmp(1.0,0);
   DDS.setAmp(0.5,1);
   DDS.setAmp(1.0,2);
   DDS.setAmp(0.5,3);
   DDS.setAmp(1.0,4);
-  DDS.setAmp(0.5,5);
+  DDS.setAmp(0.2,5);
+
+  delay (10);
+  pinMode(TRIGGERIN, INPUT);
+  pinMode(TRIGGEROUT, OUTPUT);
+  digitalWrite(TRIGGEROUT, LOW);
 }
 
 void loop() {
+  digitalWrite(TRIGGEROUT, HIGH);
   // put your main code here, to run repeatedly:
-  DDS.setProfile(0);
-  delay(500);
-  DDS.setProfile(1);
-  delay(500);
-  DDS.setProfile(2);
-  delay(500);
-  DDS.setProfile(3);
-  delay(500);
-  DDS.setProfile(4);
-  delay(500);
-  DDS.setProfile(5);
-  delay(500);
-
+  DDS.setProfileFast(0);
+  digitalWrite(TRIGGEROUT, LOW);
+  //delay(500);
+  DDS.setProfileFast(5);
+  //delay(500);
+  DDS.setProfileFast(0);
+  //delay(500);
+  DDS.setProfileFast(5);
+  //delay(500);
+  DDS.setProfileFast(0);
+  //delay(500);
+  DDS.setProfileFast(5);
+  //delay(500);
+  
 }

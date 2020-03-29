@@ -56,6 +56,7 @@ class AD9910
     void setAmpdB(double scaledAmpdB, uint8_t profile = 0);
     // Sets profile used
     void setProfile(uint8_t profile = 0);
+    void setProfileFast(uint8_t profile = 0);
 
     //Get Frequency
     unsigned long getFreq(uint8_t profile = 0);

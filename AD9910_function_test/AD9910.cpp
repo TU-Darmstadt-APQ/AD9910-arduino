@@ -60,6 +60,12 @@ void AD9910::initialize(unsigned long ref, uint8_t divider){
     pinMode(_ps2, OUTPUT);
     pinMode(_osk, OUTPUT);
   }
+  // set pinmodes and mask for PortD pins 25-27
+  pinMode(25, OUTPUT);
+  pinMode(26, OUTPUT);
+  pinMode(27, OUTPUT);
+  REG_PIOD_OWER = 0x00000007;
+  REG_PIOD_OWDR = 0xfffffff8;
   // defaults for pin logic levels
   digitalWrite(_ssPin, HIGH);
   digitalWrite(_resetPin, LOW);
@@ -142,6 +148,13 @@ void AD9910::setProfile(uint8_t profile) {
   digitalWrite(_ps0, bitRead(profile,0));
   digitalWrite(_ps1, bitRead(profile,1));
   digitalWrite(_ps2, bitRead(profile,2));
+}
+
+// setProfileFast(profile) -- Activates a profile by setting correcponsing profile pins high/low
+//Fast way using Register entries Port D.0 to D.2 (equivalent to Arduino Pins 33-35)
+void AD9910::setProfileFast(uint8_t profile) {
+  _activeProfile = profile;
+  REG_PIOD_ODSR = profile;
 }
 
 // setFreq(freq) -- writes freq to DDS board, in FTW0
