@@ -220,6 +220,26 @@ void AD9910::setAmpdB(double scaledAmpdB, byte profile){
 
    AD9910::writeProfile(profile);
 }
+// setFreqAmp(freq) -- writes freq and amp to DDS board
+void AD9910::setFreqAmp(uint32_t freq, double scaledAmp, uint8_t profile){
+   if (profile > 7) {
+     return; //invalid profile, return without doing anything
+   }
+   // set _freq and _ftw variables
+   _freq[profile] = freq;
+   _ftw[profile] = round(freq * RESOLUTION / _refClk) ;
+
+   _scaledAmp[profile] = scaledAmp;
+   _asf[profile] = round(scaledAmp*16384.0);  // 14-bit DAC
+   _scaledAmpdB[profile] = 20.0*log10(_asf[profile]/16384.0);
+
+   if (_asf[profile] >= 16384) {
+      _asf[profile]=16383; //write max value
+   } else if (scaledAmp < 0) {
+      _asf[profile]=0; //write min value
+   }
+   AD9910::writeProfile(profile);
+}
 /*
 void AD9910::enableSyncClck() {
  //write 0x01, byte 11 high

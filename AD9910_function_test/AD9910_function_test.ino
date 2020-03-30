@@ -32,18 +32,15 @@ void setup() {
   delay(10);
   
   DDS.initialize(ref_clk,divider);
-  DDS.setFreq(4000000,0);
-  DDS.setFreq(2000000,1);
-  DDS.setFreq(1000000,2);
-  DDS.setFreq(2000000,3);
-  DDS.setFreq(1000000,4);
-  DDS.setFreq(4000000,5);
-  DDS.setAmp(1.0,0);
-  DDS.setAmp(0.5,1);
-  DDS.setAmp(1.0,2);
-  DDS.setAmp(0.5,3);
-  DDS.setAmp(1.0,4);
-  DDS.setAmp(0.2,5);
+  DDS.setFreqAmp(10000000,1.0,0);
+  DDS.setFreqAmp(1000000,0.9,1);
+  DDS.setFreqAmp(10000000,0.8,2);
+  DDS.setFreqAmp(1000000,0.7,3);
+  DDS.setFreqAmp(10000000,0.6,4);
+  DDS.setFreqAmp(1000000,0.5,5);
+  DDS.setFreqAmp(10000000,0.4,6);
+  DDS.setFreqAmp(1000000,0,7);
+  DDS.setProfile(0);
 
   delay (10);
   pinMode(TRIGGERIN, INPUT);
@@ -57,15 +54,14 @@ void loop() {
   DDS.setProfileFast(0);
   digitalWrite(TRIGGEROUT, LOW);
   //delay(500);
+  DDS.setProfileFast(1);
+  DDS.setProfileFast(2);
+  DDS.setProfileFast(3);
+  DDS.setProfileFast(4);
   DDS.setProfileFast(5);
-  //delay(500);
-  DDS.setProfileFast(0);
-  //delay(500);
-  DDS.setProfileFast(5);
-  //delay(500);
-  DDS.setProfileFast(0);
-  //delay(500);
-  DDS.setProfileFast(5);
-  //delay(500);
+  DDS.setProfileFast(6);
+  DDS.setProfileFast(7);
+  
+  
   
 }

@@ -54,6 +54,7 @@ class AD9910
     //Sets scaled amplitude
     void setAmp(double scaledAmp, uint8_t profile = 0);
     void setAmpdB(double scaledAmpdB, uint8_t profile = 0);
+    void setFreqAmp(uint32_t freq, double scaledAmp, uint8_t profile);
     // Sets profile used
     void setProfile(uint8_t profile = 0);
     void setProfileFast(uint8_t profile = 0);
