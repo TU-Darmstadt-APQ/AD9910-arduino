@@ -10,11 +10,14 @@
 #define PS2PIN 7                        // DDS PROFILE[2] pin. Profile Select Pins. Digital input. Use these pins to select one of eight profiles for the DDS.
 #define IO_UPDATEPIN  9                 // DDS I/O_UPDATE pin. Digital input. A high on this pin transfers the contents of the buffers to the internal registers.
 #define RESETPIN 10                     // DDS MASTER_RESET pin. Digital input. Clears all memory elements and sets registers to default values.
-#define TRIGGERIN 12                    // Pin to trigger the Arduino
-#define TRIGGEROUT 13                   // Pin to trigger events with the Arduino or to trigger the a
+#define TRIGGERIN 28                    // Pin to trigger the Arduino
+#define TRIGGEROUT 13                   // Pin to trigger events with the Arduino
 
 int divider=25;                         // System clock is ref clk * divider
 int ref_clk=40000000;                   //Reference clock is 40 MHz
+int delay_us=1000;
+int delay_ms=10;
+
 
 //Declare the DDS object:
 AD9910 DDS(CSPIN, RESETPIN, IO_UPDATEPIN, PS0PIN, PS1PIN, PS2PIN, OSKPIN);
@@ -32,14 +35,8 @@ void setup() {
   delay(10);
   
   DDS.initialize(ref_clk,divider);
-  DDS.setFreqAmp(10000000,1.0,0);
-  DDS.setFreqAmp(1000000,0.9,1);
-  DDS.setFreqAmp(10000000,0.8,2);
-  DDS.setFreqAmp(1000000,0.7,3);
-  DDS.setFreqAmp(10000000,0.6,4);
-  DDS.setFreqAmp(1000000,0.5,5);
-  DDS.setFreqAmp(10000000,0.4,6);
-  DDS.setFreqAmp(1000000,0,7);
+  DDS.setFreq(1000000,0);
+  DDS.setAmp(1.0,0);
   DDS.setProfile(0);
 
   delay (10);
@@ -50,18 +47,23 @@ void setup() {
 
 void loop() {
   digitalWrite(TRIGGEROUT, HIGH);
-  // put your main code here, to run repeatedly:
-  DDS.setProfileFast(0);
   digitalWrite(TRIGGEROUT, LOW);
-  //delay(500);
-  DDS.setProfileFast(1);
-  DDS.setProfileFast(2);
-  DDS.setProfileFast(3);
-  DDS.setProfileFast(4);
-  DDS.setProfileFast(5);
-  DDS.setProfileFast(6);
-  DDS.setProfileFast(7);
-  
-  
-  
+  DDS.setFreqAmp(10000000,1.0,0);
+  //DDS.setAmp(0.01,0);
+  //delay(delay_ms);
+  DDS.setFreqAmp(1000000,1.0,0);
+  //DDS.setAmp(1.0,0);
+  //delay(delay_ms);
+  //
+  //
+  //delay(delay_ms);
+  //digitalWrite(TRIGGEROUT, LOW);
+  //DDS.setAmp(0.2,0);
+  //delay(delay_ms);
+  //digitalWrite(TRIGGEROUT, HIGH);
+  //DDS.setFreq(1000000,0);
+  //delayMicroseconds(delay_us);
+  //digitalWrite(TRIGGEROUT, LOW);
+  //DDS.setAmp(1.0,0);
+  //delayMicroseconds(delay_us);
 }

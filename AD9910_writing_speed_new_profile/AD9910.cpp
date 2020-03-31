@@ -220,6 +220,7 @@ void AD9910::setAmpdB(double scaledAmpdB, byte profile){
 
    AD9910::writeProfile(profile);
 }
+
 // setFreqAmp(freq) -- writes freq and amp to DDS board
 void AD9910::setFreqAmp(uint32_t freq, double scaledAmp, uint8_t profile){
    if (profile > 7) {
