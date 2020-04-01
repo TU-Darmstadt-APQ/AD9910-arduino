@@ -15,6 +15,8 @@
 
 int divider=25;                         // System clock is ref clk * divider
 int ref_clk=40000000;                   //Reference clock is 40 MHz
+int FM_gain = 0xf;
+bool oskEnable = true;
 int delay_us=1000;
 int delay_ms=10;
 
@@ -34,7 +36,7 @@ void setup() {
   
   delay(10);
   
-  DDS.initialize(ref_clk,divider);
+  DDS.initialize(ref_clk,divider, FM_gain, oskEnable);
   DDS.setFreq(1000000,0);
   DDS.setAmp(1.0,0);
   DDS.setProfile(0);
@@ -46,24 +48,14 @@ void setup() {
 }
 
 void loop() {
-  digitalWrite(TRIGGEROUT, HIGH);
-  digitalWrite(TRIGGEROUT, LOW);
-  DDS.setFreqAmp(10000000,1.0,0);
-  //DDS.setAmp(0.01,0);
-  //delay(delay_ms);
-  DDS.setFreqAmp(1000000,1.0,0);
-  //DDS.setAmp(1.0,0);
-  //delay(delay_ms);
-  //
-  //
-  //delay(delay_ms);
-  //digitalWrite(TRIGGEROUT, LOW);
-  //DDS.setAmp(0.2,0);
-  //delay(delay_ms);
-  //digitalWrite(TRIGGEROUT, HIGH);
-  //DDS.setFreq(1000000,0);
-  //delayMicroseconds(delay_us);
-  //digitalWrite(TRIGGEROUT, LOW);
-  //DDS.setAmp(1.0,0);
-  //delayMicroseconds(delay_us);
+  for (int i=0; i<6; i++){
+    digitalWrite(TRIGGEROUT, HIGH);
+    digitalWrite(TRIGGEROUT, LOW);
+    //DDS.setOSKAmp(1.0*2*i/10);
+    delay(1000);  
+  }
+  
+  
+  
+  
 }
