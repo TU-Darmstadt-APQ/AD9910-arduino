@@ -63,7 +63,7 @@ void AD9910::initialize(unsigned long ref, uint8_t divider, uint8_t FM_gain, boo
   }
   
   if (_parallel_programming == true) {
-    //Set pinmodes for Parallel Programming Pins (Port C, Pins 33-40 and 44-51)
+    //Set pinmodes for Parallel Programming Pins (Port C, Pins 33-40 and 44-51 which is )
     int PP_Pins[] = {33,34,35,36,37,38,39,40,44,45,46,47,48,49,50,51};
         
     for(int a = 0; a < (sizeof(PP_Pins)/sizeof(PP_Pins[0])); a++) {
@@ -77,7 +77,7 @@ void AD9910::initialize(unsigned long ref, uint8_t divider, uint8_t FM_gain, boo
     pinMode(25, OUTPUT);
     pinMode(26, OUTPUT);
     pinMode(27, OUTPUT);
-    REG_PIOD_OWER = 0x00000007; //Enable output writing
+    REG_PIOD_OWER = 0x00000007; //Enable output writing also enable Pin 33 for I/O_Update
     REG_PIOD_OWDR = 0xfffffff8; //Disable output writing
   }
   // defaults for pin logic levels
@@ -106,11 +106,14 @@ void AD9910::initialize(unsigned long ref, uint8_t divider, uint8_t FM_gain, boo
   _cfr1.addr = 0x00;
   _cfr1.data.bytes[0] = 0x00;
   if (OSKon == true){
-    _cfr1.data.bytes[1] = 0x02;  //Enable Output shift keying in manual mode. Amplitude Scale Factor set via Register 9.
+    _cfr1.data.bytes[1] = 0x02;               // Enable Output shift keying in manual mode. Amplitude Scale Factor set via Register 9.
+    _cfr1.data.bytes[2] = 0x80;               // Enable external Control.
+    //_cfr1.data.bytes[1] = 0x00;
+   // _cfr1.data.bytes[2] = 0x00;
   } else {
     _cfr1.data.bytes[1] = 0x00;
+    _cfr1.data.bytes[2] = 0x00;
   }
-  _cfr1.data.bytes[2] = 0x00;  
   _cfr1.data.bytes[3] = 0x00;
   
   reg_t _cfr2;
@@ -122,8 +125,13 @@ void AD9910::initialize(unsigned long ref, uint8_t divider, uint8_t FM_gain, boo
   }
   _cfr2.data.bytes[1] = 0x08;
   _cfr2.data.bytes[2] = 0x00;  // sync_clk pin disabled; not used
-  _cfr2.data.bytes[3] = 0x01;  // enable ASF from single tone profiles
-
+  if (OSKon == true) {
+    _cfr2.data.bytes[3] = 0x00;  // enable ASF from single tone profiles
+    //_cfr2.data.bytes[3] = 0x01;
+  } else {
+    _cfr2.data.bytes[3] = 0x01;  // enable ASF from single tone profiles
+  }
+  
   reg_t _cfr3;
   _cfr3.addr = 0x02;
   _cfr3.data.bytes[0] = divider << 1; // pll divider
@@ -158,12 +166,11 @@ void AD9910::reset(){
   digitalWrite(_resetPin, LOW);
 }
 
-// update() - sends a logic pulse to IO UPDATE pin on DDS; updates frequency output to
-//      newly set frequency (FTW0)
+// update() - sends a logic pulse to IO UPDATE pin on DDS; updates all Registers; 2us faster than using digitalWrite()
 void AD9910::update(){
-  digitalWrite(_updatePin, HIGH);
+  PIOC->PIO_SODR = PIO_SODR_P21;
   delay(1);
-  digitalWrite(_updatePin, LOW);
+  PIOC->PIO_CODR = PIO_CODR_P21;
 }
 
 // setProfile(profile) -- Activates a profile by setting correcponsing profile pins high/low
@@ -282,10 +289,13 @@ void AD9910::setOSKAmp(double scaledAmp){
   ASF_reg.addr = 0x09;
   ASF_reg.data.bytes[0] = _ASF & 0xff ;  //disable Sync timing validation (default); enable Parallel data port; set FM gain to maximum;
   ASF_reg.data.bytes[1] = ((_ASF & 0xff00) >> 8);
-  ASF_reg.data.bytes[2] = 0x00;  // sync_clk pin disabled; not used
-  ASF_reg.data.bytes[3] = 0x00;  // enable ASF from single tone profiles
+  //ASF_reg.data.bytes[0] = 0x00;
+  //ASF_reg.data.bytes[1] = 0xff;
+  ASF_reg.data.bytes[2] = 0x00;  
+  ASF_reg.data.bytes[3] = 0x00;  
 
   writeRegister(ASF_reg);
+  update();
 }
 /*
 void AD9910::enableSyncClck() {

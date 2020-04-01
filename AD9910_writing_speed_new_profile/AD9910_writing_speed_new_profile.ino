@@ -38,7 +38,8 @@ void setup() {
   
   DDS.initialize(ref_clk,divider, FM_gain, oskEnable);
   DDS.setFreq(1000000,0);
-  DDS.setAmp(1.0,0);
+  DDS.setOSKAmp(0.8);
+  //DDS.setAmp(0.5,0);
   DDS.setProfile(0);
 
   delay (10);
@@ -51,8 +52,14 @@ void loop() {
   for (int i=0; i<6; i++){
     digitalWrite(TRIGGEROUT, HIGH);
     digitalWrite(TRIGGEROUT, LOW);
-    //DDS.setOSKAmp(1.0*2*i/10);
-    delay(1000);  
+    DDS.setOSKAmp(1.0);
+    //DDS.update();
+    delay(1000);
+    digitalWrite(TRIGGEROUT, HIGH);
+    digitalWrite(TRIGGEROUT, LOW);
+    DDS.setOSKAmp(0.5);
+    //DDS.update();
+    delay(1000);    
   }
   
   
