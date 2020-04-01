@@ -74,6 +74,8 @@ def recvFromArduino():
     # wait for the start character
     while ord(x) != startMarker:
         x = arduino.read()
+        if len(x) == 0:
+            x = "z"
 
     # save data until the end marker is found
     while ord(x) != endMarker:
@@ -137,11 +139,22 @@ def runTest(td):
     # time.sleep(5)
 
 
+def waitForFinish():
+    while arduino.inWaiting() == 0:
+        pass
+
+    dataRecvd = recvFromArduino()
+    print ("Reply Received  " + dataRecvd)
+    # waitingForFinishSign = False
+
+    print ("===========")
+
 #======================================
 
 # THE DEMO PROGRAM STARTS HERE
 
 #======================================
+
 
 import serial
 import time
@@ -153,6 +166,7 @@ print ()
 # NOTE the user must ensure that the serial port and baudrate are correct
 # serPort = "/dev/ttyS80"
 serPort = "/dev/ttyACM0"
+# serPort = "/dev/ttyACM1"
 baudRate = 115200
 try:
     arduino = serial.Serial(serPort, baudRate, timeout=1)
@@ -173,6 +187,10 @@ testData.append("<100000,16383>")
 testData.append("<200000,16383>")
 testData.append("<300000,16383>")
 testData.append("<400000,16383>")
+testData.append("<100000,16383>")
+testData.append("<200000,16383>")
+testData.append("<300000,16383>")
+testData.append("<400000,16383>")
 # testData.append("<4,500000000,16383>")
 # testData.append("<5,600000000,16383>")
 # testData.append("<6,700000000,16383>")
@@ -182,6 +200,7 @@ testData.append("<400000,16383>")
 # testData.append("<LED1,200,0.700>")
 
 runTest(testData)
+waitForFinish()
 
 
 arduino.close

@@ -1,3 +1,4 @@
+//Define imported modules:
 #include <SPI.h>
 #include "AD9910.h"
 
@@ -13,11 +14,6 @@
 #define TRIGGERIN 28                    // Pin to trigger the Arduino
 #define TRIGGEROUT 13                   // Pin to trigger events with the Arduino
 
-int divider=25;                         // System clock is ref clk * divider
-int ref_clk=40000000;                   //Reference clock is 40 MHz
-int delay_us=1000;
-int delay_ms=1000;
-
 //Definitions for data transmission
 const byte bufferSize = 18;             //number of characters that can be saved per transmission cycle
 char inputBuffer[bufferSize];           //array to save received message
@@ -31,10 +27,17 @@ byte bytesReceived = 0;
 boolean readInProgress = false;
 boolean sequenceReadInProgress = false;
 boolean newDataFromPC = false;
-boolean transmissionFinished = false;
 char array_size[10];
-boolean shotRunning = true;
+boolean transitionToBuffered = false;
+boolean transitionToManual = false;
+boolean shotRunning = false;
+boolean programManual = false;
 
+//Definitions for DDS:
+int divider=25;                         // System clock is ref clk * divider
+int ref_clk=40000000;                   //Reference clock is 40 MHz
+int delay_us=1000;
+int delay_ms=1000;
 
 //Declare the DDS object:
 AD9910 DDS(CSPIN, RESETPIN, IO_UPDATEPIN, PS0PIN, PS1PIN, PS2PIN, OSKPIN);
@@ -49,7 +52,9 @@ typedef struct{
 const int lengthArr = 10;
 profile_t data_array[lengthArr];
 
+// Define setup-Function:
 void setup() {
+  //Begin SPI-Communication with AD9910
   delay(100);
   SPI.begin();
   SPI.setClockDivider(4);
@@ -57,67 +62,70 @@ void setup() {
   SPI.setBitOrder(MSBFIRST);
   
   delay(10);
-  
+
+  //Initialize DDS:
   DDS.initialize(ref_clk,divider);
   DDS.setFreq(1000000,0);
   DDS.setAmp(0.0,0);
   DDS.setProfile(0);
 
+  //Set Trigger Connections:
   delay (10);
   pinMode(TRIGGERIN, INPUT);
   pinMode(TRIGGEROUT, OUTPUT);
   digitalWrite(TRIGGEROUT, LOW);
 
-
+  //Initialize communication with PC:
   // wait for USB serial port to be connected - wait for pc program to open the serial port
   //SerialUSB.begin(115200);    // Initialize Native USB port
   //while(!SerialUSB);
 
+  transitionToBuffered = true;
   // normal serial connection
   Serial.begin(115200);
   //tell the PC we are ready
   Serial.println("<Arduino is ready>");
-  
-//  for (int n=0; n<1000; n++){
-//    data_array[n].freq = 100000*n;
-//    data_array[n].scaledAmp = 0.1*n;
-//    data_array[n].profile = 0;
-//    }
-//  attachInterrupt(digitalPinToInterrupt(TRIGGERIN), triggered, RISING);
+
+  //Use interrupts (takes 4us to switch profile):
+  //attachInterrupt(digitalPinToInterrupt(TRIGGERIN), triggered, RISING);
 }
 
 void loop() {
   //SerialUSB.println("hello");
   //delay(1000);
-  getDataFromPC();
-  replyToPC();
-  //setProfileTriggered();
   
-  
-//  for (int i=0; i<10; i++){
-//    digitalWrite(TRIGGEROUT, HIGH);
-//    digitalWrite(TRIGGEROUT, LOW);
-//    DDS.setFreqAmp(data_array[i].freq,data_array[i].scaledAmp,data_array[i].profile);
-//    delay(delay_ms);
-//  }
-  
-  //DDS.setAmp(0.01,0);
-  //delay(delay_ms);
-  //DDS.setFreqAmp(1000000,1.0,0);
-  //DDS.setAmp(1.0,0);
-  //delay(delay_ms);
-  //
-  //
-  //delay(delay_ms);
-  //digitalWrite(TRIGGEROUT, LOW);
-  //DDS.setAmp(0.2,0);
-  //delay(delay_ms);
+  //transition_to_buffered:
+  while (transitionToBuffered == true) {
+    getDataFromPC();
+    //delay(10000);
+    replyToPC();
+  }
+  //delay(10);
   //digitalWrite(TRIGGEROUT, HIGH);
-  //DDS.setFreq(1000000,0);
-  //delayMicroseconds(delay_us);
   //digitalWrite(TRIGGEROUT, LOW);
-  //DDS.setAmp(1.0,0);
-  //delayMicroseconds(delay_us);
+  
+  while (shotRunning == true) {
+    //digitalWrite(TRIGGEROUT, HIGH);
+    //delay(1);
+    //digitalWrite(TRIGGEROUT, LOW);
+    //PIOC->PIO_CODR = PIO_CODR_P3;
+    setProfileTriggeredFast();
+//    for (int i=0; i<2; i++){
+//      DDS.setFreqAmpSF(data_array[i].freq, data_array[i].AmpSF, data_array[i].profile);
+//      delay(1000);
+//    }  
+  }
+  
+  //transition_to_manual:
+  while (transitionToManual == true) {
+    sendFinishtoPC();
+  }
+
+  while (programManual == true) {
+    transitionToBuffered = true;
+    programManual == false;
+  }
+  
 }
 
 void getDataFromPC() {
@@ -128,7 +136,6 @@ void getDataFromPC() {
 
     char x = Serial.read();
       if (x == endMarker) {
-        transmissionFinished = true;
         newDataFromPC = true;
       }
 
@@ -157,7 +164,6 @@ void getDataFromPC() {
       }
 
       if (x == startMarker) {
-        transmissionFinished = false;
         readInProgress = true;
         arrReadIndex=0;
       }
@@ -180,26 +186,43 @@ void parseData() {
 }
 
 void replyToPC() {
-
+  
   if (newDataFromPC) {
     newDataFromPC = false;
     Serial.print("<");
     Serial.print("Profiles recieved: ");
     Serial.print(arrReadIndex);
+    Serial.print("; ");
     Serial.print(data_array[arrReadIndex-1].freq);
+    Serial.print("; ");
+    Serial.print(data_array[arrReadIndex-1].AmpSF);
+    Serial.print("; ");
+    Serial.print(data_array[arrReadIndex-1].profile);
     Serial.println(">");
+    transitionToBuffered  = false;
+    shotRunning = true;
   }
+//  delay(10000);
+//  
+//  delay(1);
 }
 
-void setProfileTriggered() {
-  arrWriteIndex = 0;
-  PIOC->PIO_CODR = PIO_CODR_P3;  // Be sure to start with a low level for output pin
+void sendFinishtoPC() {
+  Serial.print("<");
+  Serial.print("Shot finished");
+  Serial.println(">");
+  transitionToManual = false;
+  programManual = true;
+}
+
+void setProfileTriggeredFast() {
+  PIOD->PIO_CODR = PIO_CODR_P3;  // Be sure to start with a low level for Trigger pin
   //Assumed working principle: PIOD is a pointer to Port D (all D-Pins).
   //PIO_CODR is a 32bit register which is set 1 for Pin3 meaning it will set Pin3 low as it sets all high-entries to low
   //Due to the dereference operator -> Port D is set as PIO_CODR -> Pin3 is set low. 
-  while (shotRunning) {
+  //while (shotRunning==true) {
     // wait until pin 28 is high
-    while ((PIOC->PIO_PDSR & PIO_PDSR_P3) == 0);
+    while ((PIOD->PIO_PDSR & PIO_PDSR_P3) == 0);
     // PIO_PDSR_P3 is a data status register for Pin3 (bit 3 is high)
     // PIOD->PIO_PDSR is the current value of the data status register of Port D
     // PDSR is high if Input is high
@@ -209,15 +232,20 @@ void setProfileTriggered() {
     PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // low to high by using xor operation between ...?
     // PIO_ODSR_P27 is high at 27th bit.
     // Does new value of PIO_ODSR of Port B (PIOB->PIO_ODSR) is the xor-result of old PIOB->PIO_ODSR and PIO_ODSR_P27
-    
+
+    //Insert here the function to run:
+    //Currently slow Profile setting via SPI
     DDS.setFreqAmpSF(data_array[arrWriteIndex].freq, data_array[arrWriteIndex].AmpSF, data_array[arrWriteIndex].profile);
     arrWriteIndex++;
-      if (arrWriteIndex > arrReadIndex){ //Should be 7 but then Arduino crashes sometimes. Must be 6 for some reason to circumvent this although I do not understand how register 7 is then adressed
+      //Stop execution when we are at the end of the array
+      //arrReadIndex has to be reduced by one as during data transmission it is increased +1 after last received dataset.
+      if (arrWriteIndex > arrReadIndex-1){
+        transitionToManual = true;
         shotRunning = false;
       }
     PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // high to low
-    delay(1000);
+    //delay(1000);
     // Add a delay if necessary to wait for the end of the thunder
     // and avoid toggling once more ??
-  }
+  //}
 }
