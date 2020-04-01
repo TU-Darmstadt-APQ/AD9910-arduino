@@ -145,6 +145,8 @@ def waitForFinish():
 
     dataRecvd = recvFromArduino()
     print ("Reply Received  " + dataRecvd)
+    if dataRecvd == "Shot finished":
+        print('Now transition to manual')
     # waitingForFinishSign = False
 
     print ("===========")
@@ -184,20 +186,14 @@ waitForArduino()
 
 testData = []
 testData.append("<100000,16383>")
-testData.append("<200000,16383>")
-testData.append("<300000,16383>")
-testData.append("<400000,16383>")
+testData.append("<200000,12000>")
+testData.append("<300000,8000>")
+testData.append("<400000,4000>")
 testData.append("<100000,16383>")
-testData.append("<200000,16383>")
-testData.append("<300000,16383>")
-testData.append("<400000,16383>")
-# testData.append("<4,500000000,16383>")
-# testData.append("<5,600000000,16383>")
-# testData.append("<6,700000000,16383>")
-# testData.append("<LED1,800,0.700>")
-# testData.append("<LED2,800,0.500>")
-# testData.append("<LED2,200,0.200>")
-# testData.append("<LED1,200,0.700>")
+testData.append("<200000,12000>")
+testData.append("<300000,8000>")
+testData.append("<400000,4000>")
+
 
 runTest(testData)
 waitForFinish()

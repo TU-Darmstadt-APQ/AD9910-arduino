@@ -1,7 +1,8 @@
 /*
    AD9910.cpp - AD9910 DDS communication library
-   Based on AD9914 by Ben Reschovsky, 2016
-   JQI - Strontium - UMD
+   Modified from AD9910 by N. Pisenti and D. Barker, JQI, 2020
+   Based on AD9914 by Ben Reschovsky, 2016, JQI
+   Lars Kohfahl, TU Darmstadt
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
@@ -349,8 +350,8 @@ void AD9910::disableOSK(){
   AD9910::update();
 }
 
-//return boolean indicating if OSK mode is activated
-boolean AD9910::getOSKMode() {
+//return bool indicating if OSK mode is activated
+bool AD9910::getOSKMode() {
   return _OSKon;
 }
 
