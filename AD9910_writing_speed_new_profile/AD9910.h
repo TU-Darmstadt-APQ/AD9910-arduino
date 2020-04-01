@@ -106,10 +106,10 @@ class AD9910
   private:
     // Instance variables that hold pinout mapping
     // from arduino to DDS pins.
-    int _ssPin, _resetPin, _updatePin, _ps0, _ps1, _ps2, _osk, _fancy;
+    int _ssPin, _resetPin, _updatePin, _ps0, _ps1, _ps2, _osk, _fancy, _FM_gain;
     // Instance variables for frequency _freq, frequency tuning word _ftw,
     // reference clock frequency _refClk, etc.
-    unsigned long _freq[8], _ftw[8], _refClk, _asf[8], _ASF;
+    unsigned long _freq[8], _ftw[8], _refClk, _asf[8], _ASF, _FTW, _fdw, _port_data_word_lower, _port_data_word_upper, _port_data_word;
     double _scaledAmp[8], _scaledAmpdB[8];
     uint8_t _activeProfile;
     // Instance variables to keep track of the DDS mode:

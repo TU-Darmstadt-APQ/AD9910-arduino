@@ -8,8 +8,8 @@
 #define PS0PIN 5                        // DDS PROFILE[0] pin. Profile Select Pins. Digital input. Use these pins to select one of eight profiles for the DDS.
 #define PS1PIN 6                        // DDS PROFILE[1] pin. Profile Select Pins. Digital input. Use these pins to select one of eight profiles for the DDS.
 #define PS2PIN 7                        // DDS PROFILE[2] pin. Profile Select Pins. Digital input. Use these pins to select one of eight profiles for the DDS.
-#define IO_UPDATEPIN  9                 // DDS I/O_UPDATE pin. Digital input. A high on this pin transfers the contents of the buffers to the internal registers.
-#define RESETPIN 10                     // DDS MASTER_RESET pin. Digital input. Clears all memory elements and sets registers to default values.
+#define IO_UPDATEPIN  11 //was9         // DDS I/O_UPDATE pin. Digital input. A high on this pin transfers the contents of the buffers to the internal registers.
+#define RESETPIN 12  //was10            // DDS MASTER_RESET pin. Digital input. Clears all memory elements and sets registers to default values.
 #define TRIGGERIN 28                    // Pin to trigger the Arduino
 #define TRIGGEROUT 13                   // Pin to trigger events with the Arduino
 
@@ -38,6 +38,7 @@ void setup() {
   
   DDS.initialize(ref_clk,divider, FM_gain, oskEnable);
   DDS.setFreq(1000000,0);
+  //DDS.setPPFreq(1000000);
   DDS.setOSKAmp(0.8);
   //DDS.setAmp(0.5,0);
   DDS.setProfile(0);
@@ -53,13 +54,20 @@ void loop() {
     digitalWrite(TRIGGEROUT, HIGH);
     digitalWrite(TRIGGEROUT, LOW);
     DDS.setOSKAmp(1.0);
+    //DDS.setAmp(1.0,0);
     //DDS.update();
     delay(1000);
     digitalWrite(TRIGGEROUT, HIGH);
     digitalWrite(TRIGGEROUT, LOW);
     DDS.setOSKAmp(0.5);
+    //DDS.setAmp(0.5,0);
     //DDS.update();
-    delay(1000);    
+    delay(1000);
+    //DDS.setPPFreq(1000000);
+    digitalWrite(TRIGGEROUT, HIGH);
+    digitalWrite(TRIGGEROUT, LOW);
+    //DDS.setPPFreq(500000);
+        
   }
   
   

@@ -67,19 +67,26 @@ void AD9910::initialize(unsigned long ref, uint8_t divider, uint8_t FM_gain, boo
     int PP_Pins[] = {33,34,35,36,37,38,39,40,44,45,46,47,48,49,50,51};
         
     for(int a = 0; a < (sizeof(PP_Pins)/sizeof(PP_Pins[0])); a++) {
-        pinMode(PP_Pins[a], OUTPUT); 
+        pinMode(PP_Pins[a], OUTPUT);
+        digitalWrite(PP_Pins[a], LOW); 
     }
+    pinMode(52, OUTPUT);
+    pinMode(53, OUTPUT);
+    // Configure Parallel Port Destination to frequency:
+    digitalWrite(2, LOW);
+    digitalWrite(3, HIGH);
     // Mask the output for the corresponding pins; BE CAREFUL: Interrupts can destroy this!
     REG_PIOC_OWER = 0x000ff1fe; // Enable output writing for all PP_Pins as HEX: 0x000FF1FE
     REG_PIOC_OWDR = 0xfff00e01; // Disable output writing for all other Pins
-  } else {
-    // set pinmodes and mask for PortD pins 25-27
-    pinMode(25, OUTPUT);
-    pinMode(26, OUTPUT);
-    pinMode(27, OUTPUT);
-    REG_PIOD_OWER = 0x00000007; //Enable output writing also enable Pin 33 for I/O_Update
-    REG_PIOD_OWDR = 0xfffffff8; //Disable output writing
-  }
+  } 
+  //else {
+  // set pinmodes and mask for PortD pins 25-27
+  pinMode(25, OUTPUT);
+  pinMode(26, OUTPUT);
+  pinMode(27, OUTPUT);
+  REG_PIOD_OWER = 0x00000007; //Enable output writing
+  REG_PIOD_OWDR = 0xfffffff8; //Disable output writing
+  //}
   // defaults for pin logic levels
   digitalWrite(_ssPin, HIGH);
   digitalWrite(_resetPin, LOW);
@@ -97,6 +104,7 @@ void AD9910::initialize(unsigned long ref, uint8_t divider, uint8_t FM_gain, boo
   }
 
   _refClk = ref*divider;
+  _FM_gain = FM_gain;
 
   AD9910::reset();
 
@@ -119,15 +127,15 @@ void AD9910::initialize(unsigned long ref, uint8_t divider, uint8_t FM_gain, boo
   reg_t _cfr2;
   _cfr2.addr = 0x01;
   if (_parallel_programming == true){
-    _cfr2.data.bytes[0] = 0x30 + FM_gain ;  //disable Sync timing validation (default); enable Parallel data port; set FM gain to maximum;
+    _cfr2.data.bytes[0] = 0x70 + _FM_gain ;  //disable Sync timing validation (default); enable Parallel data port; set FM gain to maximum;
+    //_cfr2.data.bytes[0] = 0x20;
   } else {
     _cfr2.data.bytes[0] = 0x20 ;  //disable Sync timing validation (default)
   }
-  _cfr2.data.bytes[1] = 0x08;
+  _cfr2.data.bytes[1] = 0x0a;
   _cfr2.data.bytes[2] = 0x00;  // sync_clk pin disabled; not used
   if (OSKon == true) {
     _cfr2.data.bytes[3] = 0x00;  // enable ASF from single tone profiles
-    //_cfr2.data.bytes[3] = 0x01;
   } else {
     _cfr2.data.bytes[3] = 0x01;  // enable ASF from single tone profiles
   }
@@ -168,9 +176,9 @@ void AD9910::reset(){
 
 // update() - sends a logic pulse to IO UPDATE pin on DDS; updates all Registers; 2us faster than using digitalWrite()
 void AD9910::update(){
-  PIOC->PIO_SODR = PIO_SODR_P21;
+  PIOD->PIO_SODR = PIO_SODR_P7;
   delay(1);
-  PIOC->PIO_CODR = PIO_CODR_P21;
+  PIOD->PIO_CODR = PIO_CODR_P7;
 }
 
 // setProfile(profile) -- Activates a profile by setting correcponsing profile pins high/low
@@ -276,7 +284,21 @@ void AD9910::setFreqAmp(uint32_t freq, double scaledAmp, uint8_t profile){
 void AD9910::setPPFreq(uint32_t freq){
   
   // Calculate frequency tuning word:
-  _ftw[0] = round(freq * RESOLUTION / _refClk) ;
+  _FTW = round(freq * RESOLUTION / _refClk) ;
+//  if (_FTW >= 2147483648) {
+//    _FTW = 2147483647;
+//  } else if (_FTW < 0) {
+//    _FTW = 0;
+//  }
+  _fdw = (_FTW >> _FM_gain)& 0xffff;
+  _port_data_word_lower = (_fdw & 0xff) <<1;
+  _port_data_word_upper = (_fdw & 0xff00) << 4;
+  _port_data_word = _port_data_word_lower | _port_data_word_upper;
+
+  //Set parallel Port C:
+  PIOB->PIO_CODR = PIO_SODR_P14;
+  REG_PIOC_ODSR = _port_data_word;
+  PIOB->PIO_CODR = PIO_CODR_P14;
 
   //AD9910::writePP(profile);
 }
