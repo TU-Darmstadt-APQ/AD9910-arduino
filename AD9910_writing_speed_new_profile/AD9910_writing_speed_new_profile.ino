@@ -37,11 +37,12 @@ void setup() {
   delay(10);
   
   DDS.initialize(ref_clk,divider, FM_gain, oskEnable);
-  DDS.setFreq(1000000,0);
-  //DDS.setPPFreq(1000000);
+  //DDS.setFreq(1000000,0);
+  DDS.setFTWRegister(2000000);
+  DDS.setPPFreq(1000000);
   DDS.setOSKAmp(0.8);
   //DDS.setAmp(0.5,0);
-  DDS.setProfile(0);
+  //DDS.setProfile(0);
 
   delay (10);
   pinMode(TRIGGERIN, INPUT);
@@ -50,27 +51,20 @@ void setup() {
 }
 
 void loop() {
-  for (int i=0; i<6; i++){
-    digitalWrite(TRIGGEROUT, HIGH);
-    digitalWrite(TRIGGEROUT, LOW);
-    DDS.setOSKAmp(1.0);
-    //DDS.setAmp(1.0,0);
-    //DDS.update();
-    delay(1000);
-    digitalWrite(TRIGGEROUT, HIGH);
-    digitalWrite(TRIGGEROUT, LOW);
-    DDS.setOSKAmp(0.5);
-    //DDS.setAmp(0.5,0);
-    //DDS.update();
-    delay(1000);
-    //DDS.setPPFreq(1000000);
-    digitalWrite(TRIGGEROUT, HIGH);
-    digitalWrite(TRIGGEROUT, LOW);
-    //DDS.setPPFreq(500000);
-        
-  }
-  
-  
-  
-  
+  //for (int i=0; i<6; i++){
+    PIOB -> PIO_SODR = PIO_SODR_P27;
+    PIOB -> PIO_CODR = PIO_CODR_P27;
+    //DDS.setOSKAmp(1.0);
+    DDS.setPPFreqFast(0x503c);
+    delayMicroseconds(1);
+    PIOB -> PIO_SODR = PIO_SODR_P27;
+    PIOB -> PIO_CODR = PIO_CODR_P27;
+    DDS.setPPFreqFast(0xa07a);
+//    PIOB -> PIO_SODR = PIO_SODR_P27;
+//    //DDS.setOSKAmp(1.0);
+//    DDS.setPPFreq(2000000);
+//    PIOB -> PIO_CODR = PIO_CODR_P27;
+//    delay(100);        
+  //}
+  delay(1000);
 }

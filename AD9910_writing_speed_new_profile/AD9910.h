@@ -73,8 +73,11 @@ class AD9910
 
     //Parallel Programming:
     void setPPFreq(uint32_t freq);
+    void setPPFreqFast(uint32_t freq);
     // Set Amplitude by OSK:
     void setOSKAmp(double scaledAmp);
+    // Set FTW Register:
+    void setFTWRegister(uint32_t freq);
     /*  *********************** to implement later ***************
     // places DDS in linear sweep mode
     //void linearSweep(unsigned long, unsigned long, unsigned long, byte, unsigned long, byte);
