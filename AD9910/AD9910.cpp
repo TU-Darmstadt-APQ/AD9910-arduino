@@ -34,7 +34,6 @@ AD9910::AD9910(int ssPin, int resetPin, int updatePin, int ps0, int ps1, int ps2
   _ps2 = ps2;
   _osk = osk;
   _fancy = 1; // flag to keep track of extra functionality
-  _parallel_programming = true;
 }
 
 // alternate constructor function only using profile 0; initializes communication pinouts
@@ -51,7 +50,12 @@ AD9910::AD9910(int ssPin, int resetPin, int updatePin, int ps0) // reset = maste
 /* PUBLIC CLASS FUNCTIONS */
 
 // initialize(refClk, divider) - initializes DDS with reference freq, divider
-void AD9910::initialize(unsigned long ref, uint8_t divider, uint8_t FM_gain, bool OSKon ){
+void AD9910::initialize(unsigned long ref, uint8_t divider, uint8_t FM_gain, bool OSKon, bool parallel_programming ){
+  //Define some internal functions:
+  _parallel_programming = parallel_programming;
+  _refClk = ref*divider;
+  _FM_gain = FM_gain;
+  
   // sets up the pinmodes for output
   pinMode(_ssPin, OUTPUT);
   pinMode(_resetPin, OUTPUT);
@@ -102,11 +106,7 @@ void AD9910::initialize(unsigned long ref, uint8_t divider, uint8_t FM_gain, boo
     } else {
       digitalWrite(_osk, LOW);
     }
-    
   }
-
-  _refClk = ref*divider;
-  _FM_gain = FM_gain;
 
   AD9910::reset();
 

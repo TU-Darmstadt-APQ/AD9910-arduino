@@ -2,13 +2,14 @@
 
 void setup() {
   // put your setup code here, to run once:
-  pinMode(2, OUTPUT);
+  DDRD = DDRD | B11111100;  // this is safer as it sets pins 2 to 7 as outputs
+                    // without changing the value of pins 0 & 1, which are RX & TX
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
-  digitalWrite(2, HIGH);
-  //delay(10);
-  digitalWrite(2, LOW);
-  delay(2000);
+  PORTD = B00000100;
+  delayMicroseconds(2);
+  PORTD = B00000000;
+  delay(10);
 }

@@ -42,7 +42,7 @@ class AD9910
     AD9910(int ssPin, int resetPin, int updatePin, int ps0, int ps1, int ps2, int osk);
     AD9910(int ssPin, int resetPin, int updatePin, int ps0);
     // Initialize with refIn frequency, and clock multiplier value
-    void initialize(unsigned long ref, uint8_t mult, uint8_t FM_gain, bool oskEnable);
+    void initialize(unsigned long ref, uint8_t mult, uint8_t FM_gain, bool oskEnable, bool parallel_programming);
     // Reset the DDS
     void reset();
     // Update to load newly written settings

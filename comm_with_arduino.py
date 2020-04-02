@@ -185,15 +185,12 @@ waitForArduino()
 
 
 testData = []
-testData.append("<100000,16383>")
-testData.append("<200000,12000>")
-testData.append("<300000,8000>")
-testData.append("<400000,4000>")
-testData.append("<100000,16383>")
-testData.append("<200000,12000>")
-testData.append("<300000,8000>")
-testData.append("<400000,4000>")
 
+for i in range(10000):
+    testData.append("<41082>")
+    testData.append("<20540>")
+
+print(len(testData))
 
 runTest(testData)
 waitForFinish()
