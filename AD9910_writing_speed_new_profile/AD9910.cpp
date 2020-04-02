@@ -33,6 +33,7 @@ AD9910::AD9910(int ssPin, int resetPin, int updatePin, int ps0, int ps1, int ps2
   _ps2 = ps2;
   _osk = osk;
   _fancy = 1; // flag to keep track of extra functionality
+  _parallel_programming = true;
 }
 
 // alternate constructor function only using profile 0; initializes communication pinouts
@@ -49,7 +50,7 @@ AD9910::AD9910(int ssPin, int resetPin, int updatePin, int ps0) // reset = maste
 /* PUBLIC CLASS FUNCTIONS */
 
 // initialize(refClk, divider) - initializes DDS with reference freq, divider
-void AD9910::initialize(unsigned long ref, uint8_t divider){
+void AD9910::initialize(unsigned long ref, uint8_t divider, uint8_t FM_gain, bool OSKon ){
   // sets up the pinmodes for output
   pinMode(_ssPin, OUTPUT);
   pinMode(_resetPin, OUTPUT);
@@ -60,12 +61,33 @@ void AD9910::initialize(unsigned long ref, uint8_t divider){
     pinMode(_ps2, OUTPUT);
     pinMode(_osk, OUTPUT);
   }
+  
+  if (_parallel_programming == true) {
+    //Set pinmodes for Parallel Programming Pins (Port C, Pins 33-40 and 44-51 which is )
+    int PP_Pins[] = {33,34,35,36,37,38,39,40,44,45,46,47,48,49,50,51};
+        
+    for(int a = 0; a < (sizeof(PP_Pins)/sizeof(PP_Pins[0])); a++) {
+        pinMode(PP_Pins[a], OUTPUT);
+        digitalWrite(PP_Pins[a], LOW); 
+    }
+    pinMode(2, OUTPUT);
+    pinMode(3, OUTPUT);
+    pinMode(53, OUTPUT);
+    // Configure Parallel Port Destination to frequency:
+    digitalWrite(2, LOW);
+    digitalWrite(3, HIGH);
+    // Mask the output for the corresponding pins; BE CAREFUL: Interrupts can destroy this!
+    REG_PIOC_OWER = 0x000ff1fe; // Enable output writing for all PP_Pins as HEX: 0x000FF1FE
+    REG_PIOC_OWDR = 0xfff00e01; // Disable output writing for all other Pins
+  } 
+  //else {
   // set pinmodes and mask for PortD pins 25-27
   pinMode(25, OUTPUT);
   pinMode(26, OUTPUT);
   pinMode(27, OUTPUT);
-  REG_PIOD_OWER = 0x00000007;
-  REG_PIOD_OWDR = 0xfffffff8;
+  REG_PIOD_OWER = 0x00000007; //Enable output writing
+  REG_PIOD_OWDR = 0xfffffff8; //Disable output writing
+  //}
   // defaults for pin logic levels
   digitalWrite(_ssPin, HIGH);
   digitalWrite(_resetPin, LOW);
@@ -74,10 +96,16 @@ void AD9910::initialize(unsigned long ref, uint8_t divider){
   if (_fancy == 1){
     digitalWrite(_ps1, LOW);
     digitalWrite(_ps2, LOW);
-    digitalWrite(_osk, LOW);
+    if (OSKon == true) {
+      digitalWrite(_osk, HIGH);
+    } else {
+      digitalWrite(_osk, LOW);
+    }
+    
   }
 
   _refClk = ref*divider;
+  _FM_gain = FM_gain;
 
   AD9910::reset();
 
@@ -86,17 +114,33 @@ void AD9910::initialize(unsigned long ref, uint8_t divider){
   reg_t _cfr1;
   _cfr1.addr = 0x00;
   _cfr1.data.bytes[0] = 0x00;
-  _cfr1.data.bytes[1] = 0x00;
-  _cfr1.data.bytes[2] = 0x00;  
+  if (OSKon == true){
+    _cfr1.data.bytes[1] = 0x02;               // Enable Output shift keying in manual mode. Amplitude Scale Factor set via Register 9.
+    _cfr1.data.bytes[2] = 0x80;               // Enable external Control.
+    //_cfr1.data.bytes[1] = 0x00;
+   // _cfr1.data.bytes[2] = 0x00;
+  } else {
+    _cfr1.data.bytes[1] = 0x00;
+    _cfr1.data.bytes[2] = 0x00;
+  }
   _cfr1.data.bytes[3] = 0x00;
   
   reg_t _cfr2;
   _cfr2.addr = 0x01;
-  _cfr2.data.bytes[0] = 0x02;
-  _cfr2.data.bytes[1] = 0x08;
+  if (_parallel_programming == true){
+    _cfr2.data.bytes[0] = 0x70 + 0x0f;  //disable Sync timing validation (default); enable Parallel data port; set FM gain to maximum;
+    //_cfr2.data.bytes[0] = 0x20;
+  } else {
+    _cfr2.data.bytes[0] = 0x20 ;  //disable Sync timing validation (default)
+  }
+  _cfr2.data.bytes[1] = 0x0a;
   _cfr2.data.bytes[2] = 0x00;  // sync_clk pin disabled; not used
-  _cfr2.data.bytes[3] = 0x01;  // enable ASF from single tone profiles
-
+  if (OSKon == true) {
+    _cfr2.data.bytes[3] = 0x00;  // enable ASF from single tone profiles
+  } else {
+    _cfr2.data.bytes[3] = 0x01;  // enable ASF from single tone profiles
+  }
+  
   reg_t _cfr3;
   _cfr3.addr = 0x02;
   _cfr3.data.bytes[0] = divider << 1; // pll divider
@@ -120,10 +164,7 @@ void AD9910::initialize(unsigned long ref, uint8_t divider){
   update();
 
   delay(1);
-
-  _profileModeOn = false; //profile mode is disabled by default
-  _OSKon = false; //OSK is disabled by default
-  _activeProfile = 0;
+  _activeProfile = 0;           // Set default profile to 0
 
 }
 
@@ -134,12 +175,11 @@ void AD9910::reset(){
   digitalWrite(_resetPin, LOW);
 }
 
-// update() - sends a logic pulse to IO UPDATE pin on DDS; updates frequency output to
-//      newly set frequency (FTW0)
+// update() - sends a logic pulse to IO UPDATE pin on DDS; updates all Registers; 2us faster than using digitalWrite()
 void AD9910::update(){
-  digitalWrite(_updatePin, HIGH);
+  PIOD->PIO_SODR = PIO_SODR_P7;
   delay(1);
-  digitalWrite(_updatePin, LOW);
+  PIOD->PIO_CODR = PIO_CODR_P7;
 }
 
 // setProfile(profile) -- Activates a profile by setting correcponsing profile pins high/low
@@ -241,23 +281,72 @@ void AD9910::setFreqAmp(uint32_t freq, double scaledAmp, uint8_t profile){
    }
    AD9910::writeProfile(profile);
 }
-/*
-void AD9910::enableSyncClck() {
- //write 0x01, byte 11 high
-  byte registerInfo[] = {0x01, 4};
-  byte data[] = {0x00, 0x80, 0x09, 0x00};
-  AD9910::writeRegister(registerInfo, data);
-  AD9910::update();
+
+void AD9910::setPPFreqFast(uint32_t port_data_word){
+  // Set Trigger for delay
+  //PIOB -> PIO_SODR = PIO_SODR_P27;
+  //PIOB -> PIO_CODR = PIO_CODR_P27;
+  //Set parallel Port C:
+  PIOB->PIO_SODR = PIO_SODR_P14;
+  REG_PIOC_ODSR = port_data_word;
+  PIOB->PIO_CODR = PIO_CODR_P14;
 }
 
-void AD9910::disableSyncClck() {
-  //write 0x01, bit 11 low
-  byte registerInfo[] = {0x01, 4};
-  byte data[] = {0x00, 0x80, 0x01, 0x00};
-  AD9910::writeRegister(registerInfo, data);
-  AD9910::update();
+void AD9910::setPPFreq(uint32_t freq){
+  
+  // Calculate frequency tuning word:
+  _FTW = round(freq * RESOLUTION / _refClk) ;
+//  if (_FTW >= 2147483648) {
+//    _FTW = 2147483647;
+//  } else if (_FTW < 0) {
+//    _FTW = 0;
+//  }
+  _fdw = (_FTW >> _FM_gain)& 0xffff;
+  _port_data_word_lower = (_fdw & 0xff) <<1;
+  _port_data_word_upper = (_fdw & 0xff00) << 4;
+  _port_data_word = _port_data_word_lower | _port_data_word_upper;
+
+  // Set Trigger for delay
+  PIOB -> PIO_SODR = PIO_SODR_P27;
+  PIOB -> PIO_CODR = PIO_CODR_P27;
+  //Set parallel Port C:
+  PIOB->PIO_SODR = PIO_SODR_P14;
+  REG_PIOC_ODSR = _port_data_word;
+  PIOB->PIO_CODR = PIO_CODR_P14;
 }
-*/
+
+void AD9910::setOSKAmp(double scaledAmp){
+
+  _ASF = round(scaledAmp*16383.0) << 2;
+  
+  reg_t ASF_reg;
+  ASF_reg.addr = 0x09;
+  ASF_reg.data.bytes[0] = _ASF & 0xff ;  //disable Sync timing validation (default); enable Parallel data port; set FM gain to maximum;
+  ASF_reg.data.bytes[1] = ((_ASF & 0xff00) >> 8);
+  //ASF_reg.data.bytes[0] = 0x00;
+  //ASF_reg.data.bytes[1] = 0xff;
+  ASF_reg.data.bytes[2] = 0x00;  
+  ASF_reg.data.bytes[3] = 0x00;  
+
+  writeRegister(ASF_reg);
+  update();
+}
+
+void AD9910::setFTWRegister(uint32_t freq){
+
+  //_FTW = round(freq * RESOLUTION / _refClk) ;
+  _FTW = 0xffffffff;
+  
+  reg_t FTW_reg;
+  FTW_reg.addr = 0x07;
+  FTW_reg.data.bytes[0] = _FTW & 0xff ;  //disable Sync timing validation (default); enable Parallel data port; set FM gain to maximum;
+  FTW_reg.data.bytes[1] = ((_FTW & 0xff00) >> 8);
+  FTW_reg.data.bytes[2] = ((_FTW & 0xff0000) >> 16);  
+  FTW_reg.data.bytes[3] = ((_FTW & 0xff000000) >> 24);
+
+  writeRegister(FTW_reg);
+  update();
+}
 
 
 /////////////////////////////////////////////////////
@@ -320,35 +409,7 @@ boolean AD9910::getOSKMode() {
 
 
 
-void AD9910::selectProfile(byte profile){
-  //Possible improvement: write PS pin states all at once using register masks
-  _activeProfile = profile;
 
-  if (profile > 7) {
-    return; //not a valid profile number, return without doing anything
-  }
-
-  if ((B00000001 & profile) > 0) { //rightmost bit is 1
-      digitalWrite(_ps0, HIGH);
-  } else {
-      digitalWrite(_ps0,LOW);
-  }
-  if ((B00000010 & profile) > 0) { //next bit is 1
-      digitalWrite(_ps1, HIGH);
-  } else {
-      digitalWrite(_ps1,LOW);
-  }
-  if ((B00000100 & profile) > 0) { //next bit is 1
-      digitalWrite(_ps2, HIGH);
-  } else {
-      digitalWrite(_ps2,LOW);
-  }
-
-}
-
-byte AD9910::getProfile() {
-  return _activeProfile;
-}
 */
 
 // Writes SPI to particular register.
@@ -364,6 +425,10 @@ void AD9910::writeRegister(reg_t payload){
   digitalWrite(_ssPin, HIGH);
   SPI.endTransaction();
 }
+
+//void AD9910::getRegister(byte _register) {
+//  //SDO must be connected which is not the case on our AD9910 board
+//}
 
 /* PRIVATE CLASS FUNCTIONS */
 void AD9910::writeProfile(byte profile) {

@@ -41,7 +41,7 @@ class AD9910
     AD9910(int ssPin, int resetPin, int updatePin, int ps0, int ps1, int ps2, int osk);
     AD9910(int ssPin, int resetPin, int updatePin, int ps0);
     // Initialize with refIn frequency, and clock multiplier value
-    void initialize(unsigned long ref, uint8_t mult);
+    void initialize(unsigned long ref, uint8_t mult, uint8_t FM_gain, bool oskEnable);
     // Reset the DDS
     void reset();
     // Update to load newly written settings
@@ -70,6 +70,14 @@ class AD9910
     double getAmpdB(uint8_t profile = 0);
     // Gets current amplitude scale factor
     unsigned long getASF(uint8_t profile = 0);
+
+    //Parallel Programming:
+    void setPPFreq(uint32_t freq);
+    void setPPFreqFast(uint32_t freq);
+    // Set Amplitude by OSK:
+    void setOSKAmp(double scaledAmp);
+    // Set FTW Register:
+    void setFTWRegister(uint32_t freq);
     /*  *********************** to implement later ***************
     // places DDS in linear sweep mode
     //void linearSweep(unsigned long, unsigned long, unsigned long, byte, unsigned long, byte);
@@ -101,14 +109,14 @@ class AD9910
   private:
     // Instance variables that hold pinout mapping
     // from arduino to DDS pins.
-    int _ssPin, _resetPin, _updatePin, _ps0, _ps1, _ps2, _osk, _fancy;
+    int _ssPin, _resetPin, _updatePin, _ps0, _ps1, _ps2, _osk, _fancy, _FM_gain;
     // Instance variables for frequency _freq, frequency tuning word _ftw,
     // reference clock frequency _refClk, etc.
-    unsigned long _freq[8], _ftw[8], _refClk, _asf[8];
+    unsigned long _freq[8], _ftw[8], _refClk, _asf[8], _ASF, _FTW, _fdw, _port_data_word_lower, _port_data_word_upper, _port_data_word;
     double _scaledAmp[8], _scaledAmpdB[8];
     uint8_t _activeProfile;
     // Instance variables to keep track of the DDS mode:
-    bool _profileModeOn, _OSKon;
+    bool _OSKon, _parallel_programming;
     // write amplitude tuning word to device
     //void writeAmp(long ampScaleFactor, uint8_t profile);
     // write Freq/Amp/Phase to profile:
