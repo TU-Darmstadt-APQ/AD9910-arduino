@@ -9,7 +9,7 @@ void setup() {
 void loop() {
   // put your main code here, to run repeatedly:
   PORTD = B00000100;
-  delayMicroseconds(2);
+  delayMicroseconds(10);
   PORTD = B00000000;
   delay(10);
 }

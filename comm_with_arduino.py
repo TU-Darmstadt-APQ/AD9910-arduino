@@ -186,9 +186,10 @@ waitForArduino()
 
 testData = []
 
-for i in range(10000):
+for i in range(500):
     testData.append("<41082>")
     testData.append("<20540>")
+
 
 print(len(testData))
 

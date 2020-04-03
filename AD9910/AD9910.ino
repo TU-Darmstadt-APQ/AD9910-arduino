@@ -313,7 +313,7 @@ void setFrequencyTriggeredFast() {
     // If they are both 1 the AND-operator & makes the result 1 and we exit the while loop
 
     // Toggle pin 13
-    //PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // low to high by using xor operation between ...?
+    // PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // low to high by using xor operation between ...?
     // PIO_ODSR_P27 is high at 27th bit.
     // New value of PIO_ODSR of Port B (PIOB->PIO_ODSR) is the xor-result of old PIOB->PIO_ODSR and PIO_ODSR_P27
     
@@ -329,7 +329,9 @@ void setFrequencyTriggeredFast() {
       transitionToManual = true;
       shotRunning = false;
     }
-    //PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // high to low
-    // Add a delay if necessary to wait for the end of the thunder
-    // and avoid toggling once more ??
+    // PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // high to low
+    //Avoid toggling once more if the pulse is to long:
+    //((~PIOD->PIO_PDSR) & PIO_PDSR_P3) is only one if P3 goes low.
+    while (((~PIOD->PIO_PDSR) & PIO_PDSR_P3) == 0);
+    
 }
