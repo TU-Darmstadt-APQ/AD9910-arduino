@@ -44,10 +44,10 @@ uint32_t frequency;
 
 //Definitions for data transmission
 const byte BUFFERSIZE = 18;                 //number of characters that can be saved per transmission cycle
-const char startMarker = '[';
-const char endMarker = ']';
-const char startMarkerSequence = '<';
-const char endMarkerSequence = '>';
+const char STARTMARKER = '[';
+const char ENDMARKER = ']';
+const char STARTMARKERSEQUENCE = '<';
+const char ENDMARKERSEQUENCE = '>';
 const char MANUALMODEMARKER = 'M';
 const char BUFFEREDMODEMARKER = 'B';
 char inputBuffer[BUFFERSIZE];               //array to save received message
@@ -128,7 +128,7 @@ void loop() {
   while (bufferedMode == true) {
     //transition_to_buffered:
     
-    while (transitionToBuffered == true) {
+    while (transitionToBuffered == true) { //loop not necessary, left for conceptual reasons
       getDataFromPC(AD9910_PDW_array);
       replyToPC();
       
@@ -160,48 +160,34 @@ void loop() {
       replyToPC();
     
     
-    while (dataTransmissionFinished == true) {
+    if (dataTransmissionFinished == true) {
       DDS.setPPFreqFast(AD9910_PDW_array[0]);
       dataTransmissionFinished = false;
-      transitionToManual=true;
-      delayMicroseconds(3);
-      PIOB -> PIO_SODR = PIO_SODR_P27;
-      delayMicroseconds(3);
-      PIOB -> PIO_CODR = PIO_CODR_P27;
-    }
-    
-    //transition_to_manual:
-    while (transitionToManual == true) {
-      transitionToManual = false;
-      bufferedMode=false;
+      //bufferedMode=false;
       manualMode=false;
-      delayMicroseconds(4);
-      PIOB -> PIO_SODR = PIO_SODR_P27;
-      delayMicroseconds(4);
-      PIOB -> PIO_CODR = PIO_CODR_P27;
     }
   }
   
 }
 
 //void getDataFromPC(profile_t data_array[]) {
-//  const char startMarker = '[';
-//  const char endMarker = ']';
-//  const char startMarkerSequence = '<';
-//  const char endMarkerSequence = '>';
+//  const char STARTMARKER = '[';
+//  const char ENDMARKER = ']';
+//  const char STARTMARKERSEQUENCE = '<';
+//  const char ENDMARKERSEQUENCE = '>';
 //  
 //  // receive data from PC and save it into inputBuffer  
 //  if(Serial.available() > 0) {
 //
 //    char x = Serial.read();
-//      if (x == endMarker) {
+//      if (x == ENDMARKER) {
 //        newDataFromPC = true;
 //      }
 //
 //      if (readInProgress == true) {
 //        // the order of these IF clauses is significant
 //          
-//        if (x == endMarkerSequence) {
+//        if (x == ENDMARKERSEQUENCE) {
 //          sequenceReadInProgress = false;
 //          inputBuffer[bytesReceived] = 0;
 //          parseData(data_array,arrReadIndex);
@@ -216,13 +202,13 @@ void loop() {
 //          }
 //        }
 //    
-//        if (x == startMarkerSequence) { 
+//        if (x == STARTMARKERSEQUENCE) { 
 //          bytesReceived = 0; 
 //          sequenceReadInProgress = true;
 //        }
 //      }
 //
-//      if (x == startMarker) {
+//      if (x == STARTMARKER) {
 //        readInProgress = true;
 //        arrReadIndex=0;
 //      }
@@ -236,7 +222,7 @@ void getDataFromPC(uint32_t data_array[]) {
   if(Serial.available() > 0) {
 
     char x = Serial.read();
-      if (x == endMarker) {
+      if (x == ENDMARKER) {
         newDataFromPC = true;
         readInProgress = false;
       }
@@ -244,7 +230,7 @@ void getDataFromPC(uint32_t data_array[]) {
       if (readInProgress == true) {
         // the order of these IF clauses is significant
           
-        if (x == endMarkerSequence) {
+        if (x == ENDMARKERSEQUENCE) {
           sequenceReadInProgress = false;
           inputBuffer[bytesReceived] = 0;
           frequency = atol(inputBuffer);     // convert inputBuffer string to an frequency integer 
@@ -260,13 +246,13 @@ void getDataFromPC(uint32_t data_array[]) {
           }
         }
     
-        if (x == startMarkerSequence) { 
+        if (x == STARTMARKERSEQUENCE) { 
           bytesReceived = 0; 
           sequenceReadInProgress = true;
         }
       }
 
-      if (x == startMarker) {
+      if (x == STARTMARKER) {
         readInProgress = true;
         arrReadIndex=0;
       }
