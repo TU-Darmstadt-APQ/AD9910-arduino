@@ -48,6 +48,8 @@ const char startMarker = '[';
 const char endMarker = ']';
 const char startMarkerSequence = '<';
 const char endMarkerSequence = '>';
+const char MANUALMODEMARKER = 'M';
+const char BUFFEREDMODEMARKER = 'B';
 char inputBuffer[BUFFERSIZE];               //array to save received message
 int arrWriteIndex = 0;                      //index transmitted with profile data to store in correct position of data_array
 int arrReadIndex = 0;                       //index transmitted with profile data to read from correct position of data_array
@@ -57,8 +59,9 @@ bool sequenceReadInProgress = false;
 bool newDataFromPC = false;
 bool transitionToBuffered = true;
 bool transitionToManual = false;
-bool shotRunning = false;
-bool programManual = false;
+bool dataTransmissionFinished = false;
+bool manualMode = false;
+bool bufferedMode = false;
 
 
 
@@ -105,41 +108,78 @@ void setup() {
 }
 
 void loop() {
+  if(Serial.available() > 0) {
+    char x = Serial.read();
+    if (x==MANUALMODEMARKER) {
+      manualMode=true;
+      bufferedMode=false;
+    } else if (x==BUFFEREDMODEMARKER) {
+      manualMode=false;
+      bufferedMode=true;
+      transitionToBuffered=true;
+    }
+  }
   delayMicroseconds(2);
   PIOB -> PIO_SODR = PIO_SODR_P27;
   delayMicroseconds(2);
   PIOB -> PIO_CODR = PIO_CODR_P27;
-  //transition_to_buffered:
-  while (transitionToBuffered == true) {
-    getDataFromPC(AD9910_PDW_array);
-    replyToPC();
+
+  
+  while (bufferedMode == true) {
+    //transition_to_buffered:
     
-  }
-  
-  while (shotRunning == true) {
-    setFrequencyTriggeredFast();
-    delayMicroseconds(3);
-    PIOB -> PIO_SODR = PIO_SODR_P27;
-    delayMicroseconds(3);
-    PIOB -> PIO_CODR = PIO_CODR_P27;
-  }
-  
-  //transition_to_manual:
-  while (transitionToManual == true) {
-    sendFinishtoPC();
-    delayMicroseconds(4);
-    PIOB -> PIO_SODR = PIO_SODR_P27;
-    delayMicroseconds(4);
-    PIOB -> PIO_CODR = PIO_CODR_P27;
+    while (transitionToBuffered == true) {
+      getDataFromPC(AD9910_PDW_array);
+      replyToPC();
+      
+    }
+    
+    while (dataTransmissionFinished == true) {
+      setFrequencyTriggeredFast();
+      delayMicroseconds(3);
+      PIOB -> PIO_SODR = PIO_SODR_P27;
+      delayMicroseconds(3);
+      PIOB -> PIO_CODR = PIO_CODR_P27;
+    }
+    
+    //transition_to_manual:
+    while (transitionToManual == true) {
+      sendFinishtoPC();
+      transitionToManual = false;
+      bufferedMode=false;
+      manualMode=false;
+      delayMicroseconds(4);
+      PIOB -> PIO_SODR = PIO_SODR_P27;
+      delayMicroseconds(4);
+      PIOB -> PIO_CODR = PIO_CODR_P27;
+    }
   }
 
-  while (programManual == true) {
-    transitionToBuffered = true;
-    programManual = false;
-    delayMicroseconds(1);
-    PIOB -> PIO_SODR = PIO_SODR_P27;
-    delayMicroseconds(1);
-    PIOB -> PIO_CODR = PIO_CODR_P27;
+  while (manualMode == true) {
+      getDataFromPC(AD9910_PDW_array);
+      replyToPC();
+    
+    
+    while (dataTransmissionFinished == true) {
+      DDS.setPPFreqFast(AD9910_PDW_array[0]);
+      dataTransmissionFinished = false;
+      transitionToManual=true;
+      delayMicroseconds(3);
+      PIOB -> PIO_SODR = PIO_SODR_P27;
+      delayMicroseconds(3);
+      PIOB -> PIO_CODR = PIO_CODR_P27;
+    }
+    
+    //transition_to_manual:
+    while (transitionToManual == true) {
+      transitionToManual = false;
+      bufferedMode=false;
+      manualMode=false;
+      delayMicroseconds(4);
+      PIOB -> PIO_SODR = PIO_SODR_P27;
+      delayMicroseconds(4);
+      PIOB -> PIO_CODR = PIO_CODR_P27;
+    }
   }
   
 }
@@ -263,7 +303,7 @@ void replyToPC() {
     Serial.print(frequency);
     Serial.println(">");
     transitionToBuffered  = false;
-    shotRunning = true;
+    dataTransmissionFinished = true;
   }
 }
 
@@ -271,8 +311,6 @@ void sendFinishtoPC() {
   Serial.print("<");
   Serial.print("Shot finished");
   Serial.println(">");
-  transitionToManual = false;
-  programManual = true;
 }
 
 //void setProfileTriggeredFast() {
@@ -302,7 +340,7 @@ void sendFinishtoPC() {
 //      //arrReadIndex has to be reduced by one as during data transmission it is increased +1 after last received dataset.
 //      if (arrWriteIndex > arrReadIndex-1){
 //        transitionToManual = true;
-//        shotRunning = false;
+//        dataTransmissionFinished = false;
 //      }
 //    PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // high to low
 //    // Add a delay if necessary to wait for the end of the thunder
@@ -336,7 +374,7 @@ void setFrequencyTriggeredFast() {
     //arrReadIndex has to be reduced by one as during data transmission it is increased +1 after last received dataset.
     if (arrWriteIndex > arrReadIndex-1){
       transitionToManual = true;
-      shotRunning = false;
+      dataTransmissionFinished = false;
       arrWriteIndex = 0;
     }
     //PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // high to low
