@@ -11,5 +11,5 @@ void loop() {
   PORTD = B00000100;
   delayMicroseconds(10);
   PORTD = B00000000;
-  delay(10);
+  delay(1000);
 }

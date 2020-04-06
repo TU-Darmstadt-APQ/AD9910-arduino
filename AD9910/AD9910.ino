@@ -17,6 +17,7 @@
 //Definitions for DDS:
 int divider=25;                         // System clock is ref clk * divider
 int ref_clk=40000000;                   //Reference clock is 40 MHz
+double RESOLUTION  = 4294967296.0;
 int FM_gain = 0xf;
 bool oskEnable = true;
 bool parallel_programming = true;
@@ -35,7 +36,8 @@ typedef struct{
 AD9910 DDS(CSPIN, RESETPIN, IO_UPDATEPIN, PS0PIN, PS1PIN, PS2PIN, OSKPIN);
 
 // Define the data array depending on the Mode used; CHOOSE ONLY ONE!:
-uint32_t AD9910_freq_array[lengthArr];
+uint32_t AD9910_PDW_array[lengthArr];
+uint32_t frequency;
 //profile_t AD9910_data_array[lengthArr];
 
 
@@ -100,8 +102,8 @@ void setup() {
 void loop() {
   //transition_to_buffered:
   while (transitionToBuffered == true) {
-    getDataFromPC(AD9910_freq_array );
-    replyToPC(AD9910_freq_array);
+    getDataFromPC(AD9910_PDW_array);
+    replyToPC();
   }
   
   while (shotRunning == true) {
@@ -120,51 +122,51 @@ void loop() {
   
 }
 
-void getDataFromPC(profile_t data_array[]) {
-  const char startMarker = '[';
-  const char endMarker = ']';
-  const char startMarkerSequence = '<';
-  const char endMarkerSequence = '>';
-  
-  // receive data from PC and save it into inputBuffer  
-  if(Serial.available() > 0) {
-
-    char x = Serial.read();
-      if (x == endMarker) {
-        newDataFromPC = true;
-      }
-
-      if (readInProgress == true) {
-        // the order of these IF clauses is significant
-          
-        if (x == endMarkerSequence) {
-          sequenceReadInProgress = false;
-          inputBuffer[bytesReceived] = 0;
-          parseData(data_array,arrReadIndex);
-          arrReadIndex +=1;
-        }
-        
-        if(sequenceReadInProgress) {
-          inputBuffer[bytesReceived] = x;
-          bytesReceived ++;
-          if (bytesReceived == bufferSize) {
-            bytesReceived = bufferSize - 1;
-          }
-        }
-    
-        if (x == startMarkerSequence) { 
-          bytesReceived = 0; 
-          sequenceReadInProgress = true;
-        }
-      }
-
-      if (x == startMarker) {
-        readInProgress = true;
-        arrReadIndex=0;
-      }
-        
-  }
-}
+//void getDataFromPC(profile_t data_array[]) {
+//  const char startMarker = '[';
+//  const char endMarker = ']';
+//  const char startMarkerSequence = '<';
+//  const char endMarkerSequence = '>';
+//  
+//  // receive data from PC and save it into inputBuffer  
+//  if(Serial.available() > 0) {
+//
+//    char x = Serial.read();
+//      if (x == endMarker) {
+//        newDataFromPC = true;
+//      }
+//
+//      if (readInProgress == true) {
+//        // the order of these IF clauses is significant
+//          
+//        if (x == endMarkerSequence) {
+//          sequenceReadInProgress = false;
+//          inputBuffer[bytesReceived] = 0;
+//          parseData(data_array,arrReadIndex);
+//          arrReadIndex +=1;
+//        }
+//        
+//        if(sequenceReadInProgress) {
+//          inputBuffer[bytesReceived] = x;
+//          bytesReceived ++;
+//          if (bytesReceived == bufferSize) {
+//            bytesReceived = bufferSize - 1;
+//          }
+//        }
+//    
+//        if (x == startMarkerSequence) { 
+//          bytesReceived = 0; 
+//          sequenceReadInProgress = true;
+//        }
+//      }
+//
+//      if (x == startMarker) {
+//        readInProgress = true;
+//        arrReadIndex=0;
+//      }
+//        
+//  }
+//}
 
 void getDataFromPC(uint32_t data_array[]) {
   const char startMarker = '[';
@@ -178,6 +180,7 @@ void getDataFromPC(uint32_t data_array[]) {
     char x = Serial.read();
       if (x == endMarker) {
         newDataFromPC = true;
+        readInProgress = false;
       }
 
       if (readInProgress == true) {
@@ -186,7 +189,8 @@ void getDataFromPC(uint32_t data_array[]) {
         if (x == endMarkerSequence) {
           sequenceReadInProgress = false;
           inputBuffer[bytesReceived] = 0;
-          parseData(data_array,arrReadIndex);
+          frequency = atol(inputBuffer);     // convert inputBuffer string to an frequency integer 
+          data_array[arrReadIndex] = transformToPDW(frequency, FM_gain); 
           arrReadIndex +=1;
         }
         
@@ -212,46 +216,33 @@ void getDataFromPC(uint32_t data_array[]) {
   }
 }
 
-void parseData(profile_t data_array[], int index ) {
-  // split the data into its parts
-    
-  char * strtokIndx; // this is used by strtok() as an index
-  
-  strtokIndx = strtok(inputBuffer,","); // get the first part - the string
-  data_array[index].freq = atol(strtokIndx);     // convert this part to an integer
-  
-  strtokIndx = strtok(NULL, ","); 
-  data_array[index].AmpSF = atol(strtokIndx);     // convert this part to a float
-  
-}
+//void parseData(profile_t data_array[], int index ) {
+//  // split the data into its parts
+//    
+//  char * strtokIndx; // this is used by strtok() as an index
+//  
+//  strtokIndx = strtok(inputBuffer,","); // get the first part - the string
+//  data_array[index].freq = atol(strtokIndx);     // convert this part to an integer
+//  
+//  strtokIndx = strtok(NULL, ","); 
+//  data_array[index].AmpSF = atol(strtokIndx);     // convert this part to a float
+//  
+//}
 
-void parseData(uint32_t data_array[], int index ) {
-  // split the data into its parts
-    
-  //char * strtokIndx; // this is used by strtok() as an index
-  //strtokIndx = strtok(, ); // get the first part - the string
-  
-  data_array[index] = atol(inputBuffer);     // convert this part to an integer  
-}
 
-void replyToPC(profile_t data_array[]) {
+
+void replyToPC() {
   if (newDataFromPC) {
     newDataFromPC = false;
     Serial.print("<");
     Serial.print("Profiles recieved: ");
     Serial.print(arrReadIndex);
-    Serial.println(">");
-    transitionToBuffered  = false;
-    shotRunning = true;
-  }
-}
-
-void replyToPC(uint32_t data_array[]) {
-  if (newDataFromPC) {
-    newDataFromPC = false;
-    Serial.print("<");
-    Serial.print("Profiles recieved: ");
-    Serial.print(arrReadIndex);
+    Serial.print(",");
+    Serial.print(AD9910_PDW_array[0]);
+    Serial.print(",");
+    Serial.print(AD9910_PDW_array[1]);
+    Serial.print(",");
+    Serial.print(frequency);
     Serial.println(">");
     transitionToBuffered  = false;
     shotRunning = true;
@@ -313,13 +304,13 @@ void setFrequencyTriggeredFast() {
     // If they are both 1 the AND-operator & makes the result 1 and we exit the while loop
 
     // Toggle pin 13
-    // PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // low to high by using xor operation between ...?
+    PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // low to high by using xor operation between ...?
     // PIO_ODSR_P27 is high at 27th bit.
     // New value of PIO_ODSR of Port B (PIOB->PIO_ODSR) is the xor-result of old PIOB->PIO_ODSR and PIO_ODSR_P27
     
     //Insert here the function to run:
     //Currently Setting Frequency via ParallelPort:
-    DDS.setPPFreqFast(AD9910_freq_array[arrWriteIndex]);
+    DDS.setPPFreqFast(AD9910_PDW_array[arrWriteIndex]);
     //delayMicroseconds(1);
         
     arrWriteIndex++;
@@ -329,9 +320,28 @@ void setFrequencyTriggeredFast() {
       transitionToManual = true;
       shotRunning = false;
     }
-    // PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // high to low
+    PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // high to low
     //Avoid toggling once more if the pulse is to long:
     //((~PIOD->PIO_PDSR) & PIO_PDSR_P3) is only one if P3 goes low.
     while (((~PIOD->PIO_PDSR) & PIO_PDSR_P3) == 0);
     
 }
+
+// Transforms the frequency given in Hz to the Port Data Word send to Port C (Parallel Port) 
+// As Pins 1-8 and 12-19 of Port c is used, the lower and upper 8 bits have to be shifted accordingly 
+uint32_t transformToPDW(uint32_t freq, int _FM_gain) { 
+  uint32_t port_data_word, _FTW, _fdw; 
+  uint32_t _port_data_word_lower, _port_data_word_upper; 
+     
+  _FTW = round(freq * RESOLUTION / (ref_clk*divider)) ; 
+  //  if (_FTW >= 2147483648) { 
+  //    _FTW = 2147483647; 
+  //  } else if (_FTW < 0) { 
+  //    _FTW = 0; 
+  //  } 
+  _fdw = (_FTW >> _FM_gain)& 0xffff; 
+  _port_data_word_lower = (_fdw & 0xff) <<1; 
+  _port_data_word_upper = (_fdw & 0xff00) << 4; 
+  port_data_word = _port_data_word_lower | _port_data_word_upper; 
+  return port_data_word; 
+} 

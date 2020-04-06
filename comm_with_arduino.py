@@ -58,8 +58,7 @@
 #=====================================
 
 def sendToArduino(sendStr):
-    arduino.write(sendStr.encode('utf-8'))  # change for Python3
-    print(len(sendStr.encode('utf-8')))
+    arduino.write(sendStr.encode('utf-8'))
 
 #======================================
 
@@ -97,6 +96,7 @@ def waitForArduino():
     global startMarker, endMarker
 
     msg = ""
+    print(msg)
     while msg.find("Arduino is ready") == -1:
 
         while arduino.inWaiting() == 0:
@@ -186,7 +186,7 @@ waitForArduino()
 
 testData = []
 
-for i in range(500):
+for i in range(5):
     testData.append("<41082>")
     testData.append("<20540>")
 
