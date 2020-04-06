@@ -76,7 +76,8 @@ class AD9910
 
     //Parallel Programming:
     void setPPFreq(uint32_t freq);
-    void setPPFreqFast(uint32_t freq);
+    inline void setPPFreqFast(uint32_t port_data_word) __attribute__((always_inline));
+    //void setPPFreqFast(uint32_t port_data_word);
     // Set Amplitude by OSK:
     void setOSKAmp(double scaledAmp);
     // Set FTW Register:
@@ -128,5 +129,20 @@ class AD9910
     // DDS frequency resolution
     double RESOLUTION;// = 4294967296; // sets resolution to 2^32 = 32 bits. Using type double to avoid confusion with integer division...
 };
+
+//Inlined_functions:
+
+//inline void AD9910::setPPFreqFast(uint32_t port_data_word) __attribute__((always_inline));
+
+void AD9910::setPPFreqFast(uint32_t port_data_word){
+  // Set Trigger for delay
+  PIOB -> PIO_SODR = PIO_SODR_P27;
+  PIOB -> PIO_CODR = PIO_CODR_P27;
+  //Set parallel Port C:
+  PIOB->PIO_SODR = PIO_SODR_P14;
+  REG_PIOC_ODSR = port_data_word;
+  PIOB->PIO_CODR = PIO_CODR_P14;
+}
+
 
 #endif
