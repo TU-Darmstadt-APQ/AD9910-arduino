@@ -121,10 +121,10 @@ void loop() {
       transitionToBuffered=true;
     }
   }
-  delayMicroseconds(2);
-  PIOB -> PIO_SODR = PIO_SODR_P27;
-  delayMicroseconds(2);
-  PIOB -> PIO_CODR = PIO_CODR_P27;
+//  delayMicroseconds(2);
+//  PIOB -> PIO_SODR = PIO_SODR_P27;
+//  delayMicroseconds(2);
+//  PIOB -> PIO_CODR = PIO_CODR_P27;
 
   
   while (bufferedMode == true) {
@@ -138,10 +138,10 @@ void loop() {
     
     while (dataTransmissionFinished == true) {
       setFrequencyTriggeredFast();
-      delayMicroseconds(3);
-      PIOB -> PIO_SODR = PIO_SODR_P27;
-      delayMicroseconds(3);
-      PIOB -> PIO_CODR = PIO_CODR_P27;
+//      delayMicroseconds(3);
+//      PIOB -> PIO_SODR = PIO_SODR_P27;
+//      delayMicroseconds(3);
+//      PIOB -> PIO_CODR = PIO_CODR_P27;
     }
     
     //transition_to_manual:
@@ -150,10 +150,10 @@ void loop() {
       transitionToManual = false;
       bufferedMode=false;
       manualMode=false;
-      delayMicroseconds(4);
-      PIOB -> PIO_SODR = PIO_SODR_P27;
-      delayMicroseconds(4);
-      PIOB -> PIO_CODR = PIO_CODR_P27;
+//      delayMicroseconds(4);
+//      PIOB -> PIO_SODR = PIO_SODR_P27;
+//      delayMicroseconds(4);
+//      PIOB -> PIO_CODR = PIO_CODR_P27;
     }
   }
 

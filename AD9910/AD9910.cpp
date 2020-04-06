@@ -321,8 +321,8 @@ void AD9910::setFreqAmpSF(uint32_t freq, unsigned long AmpSF, uint8_t profile){
 
 void AD9910::setPPFreqFast(uint32_t port_data_word){
   // Set Trigger for delay
-  //PIOB -> PIO_SODR = PIO_SODR_P27;
-  //PIOB -> PIO_CODR = PIO_CODR_P27;
+  PIOB -> PIO_SODR = PIO_SODR_P27;
+  PIOB -> PIO_CODR = PIO_CODR_P27;
   //Set parallel Port C:
   PIOB->PIO_SODR = PIO_SODR_P14;
   REG_PIOC_ODSR = port_data_word;
