@@ -43,11 +43,15 @@ uint32_t frequency;
 
 
 //Definitions for data transmission
-const byte bufferSize = 18;                 //number of characters that can be saved per transmission cycle
-char inputBuffer[bufferSize];               //array to save received message
+const byte BUFFERSIZE = 18;                 //number of characters that can be saved per transmission cycle
+const char startMarker = '[';
+const char endMarker = ']';
+const char startMarkerSequence = '<';
+const char endMarkerSequence = '>';
+char inputBuffer[BUFFERSIZE];               //array to save received message
 int arrWriteIndex = 0;                      //index transmitted with profile data to store in correct position of data_array
 int arrReadIndex = 0;                       //index transmitted with profile data to read from correct position of data_array
-byte bytesReceived = 0;                     //index counting the received bytes; Reading data from PC stops when bytesReceived == bufferSize
+byte bytesReceived = 0;                     //index counting the received bytes; Reading data from PC stops when bytesReceived == BUFFERSIZE
 bool readInProgress = false;                
 bool sequenceReadInProgress = false;
 bool newDataFromPC = false;
@@ -55,6 +59,7 @@ bool transitionToBuffered = true;
 bool transitionToManual = false;
 bool shotRunning = false;
 bool programManual = false;
+
 
 
 // Define setup-Function:
@@ -100,24 +105,41 @@ void setup() {
 }
 
 void loop() {
+  delayMicroseconds(2);
+  PIOB -> PIO_SODR = PIO_SODR_P27;
+  delayMicroseconds(2);
+  PIOB -> PIO_CODR = PIO_CODR_P27;
   //transition_to_buffered:
   while (transitionToBuffered == true) {
     getDataFromPC(AD9910_PDW_array);
     replyToPC();
+    
   }
   
   while (shotRunning == true) {
     setFrequencyTriggeredFast();
+    delayMicroseconds(3);
+    PIOB -> PIO_SODR = PIO_SODR_P27;
+    delayMicroseconds(3);
+    PIOB -> PIO_CODR = PIO_CODR_P27;
   }
   
   //transition_to_manual:
   while (transitionToManual == true) {
     sendFinishtoPC();
+    delayMicroseconds(4);
+    PIOB -> PIO_SODR = PIO_SODR_P27;
+    delayMicroseconds(4);
+    PIOB -> PIO_CODR = PIO_CODR_P27;
   }
 
   while (programManual == true) {
     transitionToBuffered = true;
-    programManual == false;
+    programManual = false;
+    delayMicroseconds(1);
+    PIOB -> PIO_SODR = PIO_SODR_P27;
+    delayMicroseconds(1);
+    PIOB -> PIO_CODR = PIO_CODR_P27;
   }
   
 }
@@ -149,8 +171,8 @@ void loop() {
 //        if(sequenceReadInProgress) {
 //          inputBuffer[bytesReceived] = x;
 //          bytesReceived ++;
-//          if (bytesReceived == bufferSize) {
-//            bytesReceived = bufferSize - 1;
+//          if (bytesReceived == BUFFERSIZE) {
+//            bytesReceived = BUFFERSIZE - 1;
 //          }
 //        }
 //    
@@ -169,10 +191,6 @@ void loop() {
 //}
 
 void getDataFromPC(uint32_t data_array[]) {
-  const char startMarker = '[';
-  const char endMarker = ']';
-  const char startMarkerSequence = '<';
-  const char endMarkerSequence = '>';
   
   // receive data from PC and save it into inputBuffer  
   if(Serial.available() > 0) {
@@ -190,15 +208,15 @@ void getDataFromPC(uint32_t data_array[]) {
           sequenceReadInProgress = false;
           inputBuffer[bytesReceived] = 0;
           frequency = atol(inputBuffer);     // convert inputBuffer string to an frequency integer 
-          data_array[arrReadIndex] = transformToPDW(frequency, FM_gain); 
+          data_array[arrReadIndex] = DDS.transformToPDW(frequency); 
           arrReadIndex +=1;
         }
         
         if(sequenceReadInProgress) {
           inputBuffer[bytesReceived] = x;
           bytesReceived ++;
-          if (bytesReceived == bufferSize) {
-            bytesReceived = bufferSize - 1;
+          if (bytesReceived == BUFFERSIZE) {
+            bytesReceived = BUFFERSIZE - 1;
           }
         }
     
@@ -257,39 +275,39 @@ void sendFinishtoPC() {
   programManual = true;
 }
 
-void setProfileTriggeredFast() {
-  PIOD->PIO_CODR = PIO_CODR_P3;  // Be sure to start with a low level for Trigger pin
-  //Assumed working principle: PIOD is a pointer to Port D (all D-Pins).
-  //PIO_CODR is a 32bit register which is set 1 for Pin3 meaning it will set Pin3 low as it sets all high-entries to low
-  //Due to the dereference operator -> Port D is set as PIO_CODR -> Pin3 is set low. 
-    // wait until pin 28 is high:
-    while ((PIOD->PIO_PDSR & PIO_PDSR_P3) == 0);
-    // PIO_PDSR_P3 is a data status register for Pin3 (bit 3 is high)
-    // PIOD->PIO_PDSR is the current value of the data status register of Port D
-    // PDSR is high if Input is high
-    // If they are both 1 the AND-operator & makes the result 1 and we exit the while loop
-
-    // Toggle pin 13
-    PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // low to high by using xor operation between ...?
-    // PIO_ODSR_P27 is high at 27th bit.
-    // New value of PIO_ODSR of Port B (PIOB->PIO_ODSR) is the xor-result of old PIOB->PIO_ODSR and PIO_ODSR_P27
-    
-    //Insert here the function to run:
-    //Currently slow Profile setting via SPI; Setting the profile takes up to 200us, until the function is processed it takes up to 1,2ms!
-    //DDS.setFreqAmpSF(AD9910_data_array[arrWriteIndex].freq, AD9910_data_array[arrWriteIndex].AmpSF, AD9910_data_array[arrWriteIndex].profile);
-
-
-    arrWriteIndex++;
-      //Stop execution when we are at the end of the array
-      //arrReadIndex has to be reduced by one as during data transmission it is increased +1 after last received dataset.
-      if (arrWriteIndex > arrReadIndex-1){
-        transitionToManual = true;
-        shotRunning = false;
-      }
-    PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // high to low
-    // Add a delay if necessary to wait for the end of the thunder
-    // and avoid toggling once more ??
-}
+//void setProfileTriggeredFast() {
+//  PIOD->PIO_CODR = PIO_CODR_P3;  // Be sure to start with a low level for Trigger pin
+//  //Assumed working principle: PIOD is a pointer to Port D (all D-Pins).
+//  //PIO_CODR is a 32bit register which is set 1 for Pin3 meaning it will set Pin3 low as it sets all high-entries to low
+//  //Due to the dereference operator -> Port D is set as PIO_CODR -> Pin3 is set low. 
+//    // wait until pin 28 is high:
+//    while ((PIOD->PIO_PDSR & PIO_PDSR_P3) == 0);
+//    // PIO_PDSR_P3 is a data status register for Pin3 (bit 3 is high)
+//    // PIOD->PIO_PDSR is the current value of the data status register of Port D
+//    // PDSR is high if Input is high
+//    // If they are both 1 the AND-operator & makes the result 1 and we exit the while loop
+//
+//    // Toggle pin 13
+//    PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // low to high by using xor operation between ...?
+//    // PIO_ODSR_P27 is high at 27th bit.
+//    // New value of PIO_ODSR of Port B (PIOB->PIO_ODSR) is the xor-result of old PIOB->PIO_ODSR and PIO_ODSR_P27
+//    
+//    //Insert here the function to run:
+//    //Currently slow Profile setting via SPI; Setting the profile takes up to 200us, until the function is processed it takes up to 1,2ms!
+//    //DDS.setFreqAmpSF(AD9910_data_array[arrWriteIndex].freq, AD9910_data_array[arrWriteIndex].AmpSF, AD9910_data_array[arrWriteIndex].profile);
+//
+//
+//    arrWriteIndex++;
+//      //Stop execution when we are at the end of the array
+//      //arrReadIndex has to be reduced by one as during data transmission it is increased +1 after last received dataset.
+//      if (arrWriteIndex > arrReadIndex-1){
+//        transitionToManual = true;
+//        shotRunning = false;
+//      }
+//    PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // high to low
+//    // Add a delay if necessary to wait for the end of the thunder
+//    // and avoid toggling once more ??
+//}
 
 void setFrequencyTriggeredFast() {
   PIOD->PIO_CODR = PIO_CODR_P3;  // Be sure to start with a low level for Trigger pin
@@ -304,7 +322,7 @@ void setFrequencyTriggeredFast() {
     // If they are both 1 the AND-operator & makes the result 1 and we exit the while loop
 
     // Toggle pin 13
-    PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // low to high by using xor operation between ...?
+    //PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // low to high by using xor operation between ...?
     // PIO_ODSR_P27 is high at 27th bit.
     // New value of PIO_ODSR of Port B (PIOB->PIO_ODSR) is the xor-result of old PIOB->PIO_ODSR and PIO_ODSR_P27
     
@@ -319,29 +337,11 @@ void setFrequencyTriggeredFast() {
     if (arrWriteIndex > arrReadIndex-1){
       transitionToManual = true;
       shotRunning = false;
+      arrWriteIndex = 0;
     }
-    PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // high to low
+    //PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // high to low
     //Avoid toggling once more if the pulse is to long:
     //((~PIOD->PIO_PDSR) & PIO_PDSR_P3) is only one if P3 goes low.
     while (((~PIOD->PIO_PDSR) & PIO_PDSR_P3) == 0);
     
 }
-
-// Transforms the frequency given in Hz to the Port Data Word send to Port C (Parallel Port) 
-// As Pins 1-8 and 12-19 of Port c is used, the lower and upper 8 bits have to be shifted accordingly 
-uint32_t transformToPDW(uint32_t freq, int _FM_gain) { 
-  uint32_t port_data_word, _FTW, _fdw; 
-  uint32_t _port_data_word_lower, _port_data_word_upper; 
-     
-  _FTW = round(freq * RESOLUTION / (ref_clk*divider)) ; 
-  //  if (_FTW >= 2147483648) { 
-  //    _FTW = 2147483647; 
-  //  } else if (_FTW < 0) { 
-  //    _FTW = 0; 
-  //  } 
-  _fdw = (_FTW >> _FM_gain)& 0xffff; 
-  _port_data_word_lower = (_fdw & 0xff) <<1; 
-  _port_data_word_upper = (_fdw & 0xff00) << 4; 
-  port_data_word = _port_data_word_lower | _port_data_word_upper; 
-  return port_data_word; 
-} 

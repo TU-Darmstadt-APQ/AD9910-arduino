@@ -81,6 +81,7 @@ class AD9910
     void setOSKAmp(double scaledAmp);
     // Set FTW Register:
     void setFTWRegister(uint32_t freq);
+    uint32_t transformToPDW(uint32_t freq);
     /*  *********************** to implement later ***************
     // places DDS in linear sweep mode
     //void linearSweep(unsigned long, unsigned long, unsigned long, byte, unsigned long, byte);

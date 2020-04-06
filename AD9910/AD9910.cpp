@@ -352,6 +352,23 @@ void AD9910::setPPFreq(uint32_t freq){
   PIOB->PIO_CODR = PIO_CODR_P14;
 }
 
+// Transforms the frequency given in Hz to the Port Data Word send to Port C (Parallel Port) 
+// As Pins 1-8 and 12-19 of Port c is used, the lower and upper 8 bits have to be shifted accordingly 
+uint32_t AD9910::transformToPDW(uint32_t freq) {  
+     
+  _FTW = round(freq * RESOLUTION / _refClk) ; 
+  //  if (_FTW >= 2147483648) { 
+  //    _FTW = 2147483647; 
+  //  } else if (_FTW < 0) { 
+  //    _FTW = 0; 
+  //  } 
+  _fdw = (_FTW >> _FM_gain)& 0xffff; 
+  _port_data_word_lower = (_fdw & 0xff) <<1; 
+  _port_data_word_upper = (_fdw & 0xff00) << 4; 
+  _port_data_word = _port_data_word_lower | _port_data_word_upper; 
+  return _port_data_word; 
+} 
+
 void AD9910::setOSKAmp(double scaledAmp){
 
   _ASF = round(scaledAmp*16383.0) << 2;
