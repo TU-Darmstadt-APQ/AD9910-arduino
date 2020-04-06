@@ -48,8 +48,6 @@ const char STARTMARKER = '[';
 const char ENDMARKER = ']';
 const char STARTMARKERSEQUENCE = '<';
 const char ENDMARKERSEQUENCE = '>';
-const char MANUALMODEMARKER = 'M';
-const char BUFFEREDMODEMARKER = 'B';
 char inputBuffer[BUFFERSIZE];               //array to save received message
 int arrWriteIndex = 0;                      //index transmitted with profile data to store in correct position of data_array
 int arrReadIndex = 0;                       //index transmitted with profile data to read from correct position of data_array
@@ -57,9 +55,13 @@ byte bytesReceived = 0;                     //index counting the received bytes;
 bool readInProgress = false;                
 bool sequenceReadInProgress = false;
 bool newDataFromPC = false;
+bool dataTransmissionFinished = false;
+
+//Definitions for Manual und Buffered Mode:
+const char MANUALMODEMARKER = 'M';
+const char BUFFEREDMODEMARKER = 'B';
 bool transitionToBuffered = true;
 bool transitionToManual = false;
-bool dataTransmissionFinished = false;
 bool manualMode = false;
 bool bufferedMode = false;
 
