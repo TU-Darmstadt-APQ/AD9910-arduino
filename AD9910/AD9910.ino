@@ -146,7 +146,7 @@ void loop() {
     
     //transition_to_manual:
     while (transitionToManual == true) {
-      sendFinishtoPC();
+      //sendFinishtoPC();
       transitionToManual = false;
       bufferedMode=false;
       manualMode=false;
