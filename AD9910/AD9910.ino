@@ -116,17 +116,14 @@ void setup() {
 inline void setFrequencyTriggeredFast() __attribute__((always_inline));
 
 void setFrequencyTriggeredFast() {
+    //Takes approx 400ns:
     if ((PIOD->PIO_ISR & PIO_ISR_P3) == PIO_ISR_P3) {
 
     // Toggle pin 13
     //PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // low to high by using xor operation between ...?
    
-    //Currently Setting Frequency via ParallelPort:
-    PIOB->PIO_SODR = PIO_SODR_P14;
-    PIOC->PIO_ODSR = AD9910_PDW_array[arrWriteIndex];
-    PIOB->PIO_CODR = PIO_CODR_P14;
-    //Could be used via inline function:
-    //DDS.setPPFreqFast(AD9910_PDW_array[arrWriteIndex]);
+    //Setting Frequency via ParallelPort (as Inline Function):
+    DDS.setPPFreqFast(AD9910_PDW_array[arrWriteIndex]);
     
         
     arrWriteIndex++;
@@ -171,10 +168,6 @@ void loop() {
     
     while (dataTransmissionFinished == true) {
       setFrequencyTriggeredFast();
-//      delayMicroseconds(3);
-//      PIOB -> PIO_SODR = PIO_SODR_P27;
-//      delayMicroseconds(3);
-//      PIOB -> PIO_CODR = PIO_CODR_P27;
     }
     
     //transition_to_manual:
