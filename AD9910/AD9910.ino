@@ -105,8 +105,11 @@ void setup() {
   //tell the PC we are ready
   Serial.println("<Arduino is ready>");
 
-  //Use interrupts (takes 4us to switch profile):
-  //attachInterrupt(digitalPinToInterrupt(TRIGGERIN), triggered, RISING);
+  //Use Edge detection of Atmel SAM3X8E at Arduino Pin28( Port D.3):
+  PIOD->PIO_AIMER = PIO_AIMER_P3; //Essentially important to not interrupt on falling edge, I don't know why.
+  PIOD->PIO_ESR = PIO_ESR_P3;
+  PIOD->PIO_REHLSR = PIO_REHLSR_P3; // The interrupt source is a Rising Edge
+  PIOD->PIO_IER = PIO_IER_P3;
 }
 
 void loop() {
@@ -341,7 +344,8 @@ void setFrequencyTriggeredFast() {
   //PIO_CODR is a 32bit register which is set 1 for Pin3 meaning it will set Pin3 low as it sets all high-entries to low
   //Due to the dereference operator -> Port D is set as PIO_CODR -> Pin3 is set low. 
     // wait until pin 28 is high:
-    while ((PIOD->PIO_PDSR & PIO_PDSR_P3) == 0);
+    //while ((PIOD->PIO_PDSR & PIO_PDSR_P3) == 0);
+    if ((PIOD->PIO_ISR & PIO_ISR_P3) == PIO_ISR_P3) {
     // PIO_PDSR_P3 is a data status register for Pin3 (bit 3 is high)
     // PIOD->PIO_PDSR is the current value of the data status register of Port D
     // PDSR is high if Input is high
@@ -358,16 +362,17 @@ void setFrequencyTriggeredFast() {
     //delayMicroseconds(1);
         
     arrWriteIndex++;
-    //Stop execution when we are at the end of the array
-    //arrReadIndex has to be reduced by one as during data transmission it is increased +1 after last received dataset.
-    if (arrWriteIndex > arrReadIndex-1){
-      transitionToManual = true;
-      dataTransmissionFinished = false;
-      arrWriteIndex = 0;
-    }
+      //Stop execution when we are at the end of the array
+      //arrReadIndex has to be reduced by one as during data transmission it is increased +1 after last received dataset.
+      if (arrWriteIndex > arrReadIndex-1){
+        transitionToManual = true;
+        //dataTransmissionFinished = false;
+        arrWriteIndex = 0;
+      }
     //PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // high to low
     //Avoid toggling once more if the pulse is to long:
     //((~PIOD->PIO_PDSR) & PIO_PDSR_P3) is only one if P3 goes low.
-    while (((~PIOD->PIO_PDSR) & PIO_PDSR_P3) == 0);
+    //while (((~PIOD->PIO_PDSR) & PIO_PDSR_P3) == 0);
+    }
     
 }

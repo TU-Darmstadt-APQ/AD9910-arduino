@@ -140,7 +140,7 @@ void AD9910::setPPFreqFast(uint32_t port_data_word){
   //PIOB -> PIO_CODR = PIO_CODR_P27;
   //Set parallel Port C:
   PIOB->PIO_SODR = PIO_SODR_P14;
-  REG_PIOC_ODSR = port_data_word;
+  PIOC->PIO_ODSR = port_data_word;
   PIOB->PIO_CODR = PIO_CODR_P14;
 }
 
