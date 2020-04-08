@@ -335,19 +335,11 @@ void AD9910::setPPFreq(uint32_t freq){
   
   // Calculate frequency tuning word:
   _FTW = round(freq * RESOLUTION / _refClk) ;
-//  if (_FTW >= 2147483648) {
-//    _FTW = 2147483647;
-//  } else if (_FTW < 0) {
-//    _FTW = 0;
-//  }
   _fdw = (_FTW >> _FM_gain)& 0xffff;
   _port_data_word_lower = (_fdw & 0xff) <<1;
   _port_data_word_upper = (_fdw & 0xff00) << 4;
   _port_data_word = _port_data_word_lower | _port_data_word_upper;
 
-  // Set Trigger for delay
-  PIOB -> PIO_SODR = PIO_SODR_P27;
-  PIOB -> PIO_CODR = PIO_CODR_P27;
   //Set parallel Port C:
   PIOB->PIO_SODR = PIO_SODR_P14;
   REG_PIOC_ODSR = _port_data_word;
@@ -358,12 +350,7 @@ void AD9910::setPPFreq(uint32_t freq){
 // As Pins 1-8 and 12-19 of Port c is used, the lower and upper 8 bits have to be shifted accordingly 
 uint32_t AD9910::transformToPDW(uint32_t freq) {  
      
-  _FTW = round(freq * RESOLUTION / _refClk) ; 
-  //  if (_FTW >= 2147483648) { 
-  //    _FTW = 2147483647; 
-  //  } else if (_FTW < 0) { 
-  //    _FTW = 0; 
-  //  } 
+  _FTW = round(freq * RESOLUTION / _refClk) ;
   _fdw = (_FTW >> _FM_gain)& 0xffff; 
   _port_data_word_lower = (_fdw & 0xff) <<1; 
   _port_data_word_upper = (_fdw & 0xff00) << 4; 
@@ -379,8 +366,6 @@ void AD9910::setOSKAmp(double scaledAmp){
   ASF_reg.addr = 0x09;
   ASF_reg.data.bytes[0] = _ASF & 0xff ;  //disable Sync timing validation (default); enable Parallel data port; set FM gain to maximum;
   ASF_reg.data.bytes[1] = ((_ASF & 0xff00) >> 8);
-  //ASF_reg.data.bytes[0] = 0x00;
-  //ASF_reg.data.bytes[1] = 0xff;
   ASF_reg.data.bytes[2] = 0x00;  
   ASF_reg.data.bytes[3] = 0x00;  
 

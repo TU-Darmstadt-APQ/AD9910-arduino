@@ -17,28 +17,27 @@
 //Definitions for DDS:
 int divider=25;                         // System clock is ref clk * divider
 int ref_clk=40000000;                   //Reference clock is 40 MHz
-double RESOLUTION  = 4294967296.0;
+const double RESOLUTION  = 4294967296.0;
 int FM_gain = 0xf;
 bool oskEnable = true;
 bool parallel_programming = true;
-int delay_us=1000;
-int delay_ms=10;
-const int lengthArr = 20001;
 
-//2D array with frequency, amplitude, profile:
+//Declare the DDS object:
+AD9910 DDS(CSPIN, RESETPIN, IO_UPDATEPIN, PS0PIN, PS1PIN, PS2PIN, OSKPIN);
+
+//Define data type to save frequency, amplitude, profile:
 typedef struct{
   uint32_t freq;
   unsigned long AmpSF;
   uint8_t profile=0;
 } profile_t;
 
-//Declare the DDS object:
-AD9910 DDS(CSPIN, RESETPIN, IO_UPDATEPIN, PS0PIN, PS1PIN, PS2PIN, OSKPIN);
+const int LENGTHARR = 20001;
 
 // Define the data array depending on the Mode used; CHOOSE ONLY ONE!:
-uint32_t AD9910_PDW_array[lengthArr];
+uint32_t AD9910_PDW_array[LENGTHARR];
 uint32_t frequency;
-//profile_t AD9910_data_array[lengthArr];
+//profile_t AD9910_data_array[LENGTHARR];
 
 
 
@@ -76,16 +75,21 @@ void setup() {
   SPI.setDataMode(SPI_MODE0,CSPIN);
   SPI.setBitOrder(MSBFIRST);
   
+  // Begin serial connection with PC:
   Serial.begin(115200);
+  // Here transfer of DDS settings can be included...
+  //tell the PC we are ready
+  Serial.println("<Arduino is ready>");
   
   delay(10);
 
   //Initialize DDS:
   DDS.initialize(ref_clk,divider, FM_gain, oskEnable, parallel_programming);
-  //DDS.setFreq(1000000,0);
+  //Set Frequency and Amplitude for ParallelPort Frequency Modification
   DDS.setFTWRegister(2000000);
   DDS.setPPFreq(1000000);
-  DDS.setOSKAmp(0.8);
+  DDS.setOSKAmp(1.0);
+  //DDS.setFreq(1000000,0);
   //DDS.setAmp(0.5,0);
   //DDS.setProfile(0);
 
@@ -95,24 +99,14 @@ void setup() {
   pinMode(TRIGGEROUT, OUTPUT);
   digitalWrite(TRIGGEROUT, LOW);
 
-  //Initialize communication with PC:
-  // wait for USB serial port to be connected - wait for pc program to open the serial port
-  //SerialUSB.begin(115200);    // Initialize Native USB port
-  //while(!SerialUSB);
-
-  // normal serial connection
-  Serial.begin(115200);
-  //tell the PC we are ready
-  Serial.println("<Arduino is ready>");
-
-  //Use Edge detection of Atmel SAM3X8E at Arduino Pin28( Port D.3):
+  //Initialize Edge detection of Atmel SAM3X8E at Arduino Pin28( Port D.3):
   PIOD->PIO_AIMER = PIO_AIMER_P3; //Essentially important to not interrupt on falling edge, I don't know why.
   PIOD->PIO_ESR = PIO_ESR_P3;
   PIOD->PIO_REHLSR = PIO_REHLSR_P3; // The interrupt source is a Rising Edge
   PIOD->PIO_IER = PIO_IER_P3;
 }
 
-//needs to be places here for correct compiling:
+//Inline function needs to be places here for correct compiling:
 inline void setFrequencyTriggeredFast() __attribute__((always_inline));
 
 void setFrequencyTriggeredFast() {
@@ -131,7 +125,7 @@ void setFrequencyTriggeredFast() {
       //arrReadIndex has to be reduced by one as during data transmission it is increased +1 after last received dataset.
       if (arrWriteIndex > arrReadIndex-1){
         transitionToManual = true;
-        //dataTransmissionFinished = false;
+        dataTransmissionFinished = false;  //Comment out for test purposes with labscript at home
         arrWriteIndex = 0;
       }
     //PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // high to low
@@ -139,7 +133,9 @@ void setFrequencyTriggeredFast() {
     
 }
 
+// Program loop:
 void loop() {
+  //Wait for new instruction starting with correct MARKER:
   if(Serial.available() > 0) {
     char x = Serial.read();
     if (x==MANUALMODEMARKER) {
@@ -151,53 +147,47 @@ void loop() {
       transitionToBuffered=true;
     }
   }
-//  delayMicroseconds(2);
-//  PIOB -> PIO_SODR = PIO_SODR_P27;
-//  delayMicroseconds(2);
-//  PIOB -> PIO_CODR = PIO_CODR_P27;
-
   
+  // Start buffered Mode:
   while (bufferedMode == true) {
-    //transition_to_buffered:
     
+    //transition_to_buffered:
     while (transitionToBuffered == true) { //loop not necessary, left for conceptual reasons
       getDataFromPC(AD9910_PDW_array);
       replyToPC();
-      
     }
     
+    //Shot ongoing:
     while (dataTransmissionFinished == true) {
       setFrequencyTriggeredFast();
     }
     
     //transition_to_manual:
     while (transitionToManual == true) {
-      //sendFinishtoPC();
+      //sendFinishtoPC();  //Commented out as Labscript implementation currently cannot handle a feedback after shot is finished
       transitionToManual = false;
       bufferedMode=false;
       manualMode=false;
-//      delayMicroseconds(4);
-//      PIOB -> PIO_SODR = PIO_SODR_P27;
-//      delayMicroseconds(4);
-//      PIOB -> PIO_CODR = PIO_CODR_P27;
     }
   }
 
+  //Start manual Mode:
   while (manualMode == true) {
       getDataFromPC(AD9910_PDW_array);
       replyToPC();
     
-    
+    //Set frequency after all data has been received:
     if (dataTransmissionFinished == true) {
       DDS.setPPFreqFast(AD9910_PDW_array[0]);
       dataTransmissionFinished = false;
-      //bufferedMode=false;
+      bufferedMode=false; 
       manualMode=false;
     }
   }
   
 }
 
+// This function is necessary for transmission of Frequency, Amplitude (and Phase):
 //void getDataFromPC(profile_t data_array[]) {
 //  const char STARTMARKER = '[';
 //  const char ENDMARKER = ']';
@@ -244,25 +234,26 @@ void loop() {
 //  }
 //}
 
+// Get frequency data rom PC:
 void getDataFromPC(uint32_t data_array[]) {
   
   // receive data from PC and save it into inputBuffer  
   if(Serial.available() > 0) {
 
     char x = Serial.read();
+    // the order of the IF clauses is important!    
       if (x == ENDMARKER) {
         newDataFromPC = true;
         readInProgress = false;
       }
 
       if (readInProgress == true) {
-        // the order of these IF clauses is significant
-          
+        
         if (x == ENDMARKERSEQUENCE) {
           sequenceReadInProgress = false;
           inputBuffer[bytesReceived] = 0;
           frequency = atol(inputBuffer);     // convert inputBuffer string to an frequency integer 
-          data_array[arrReadIndex] = DDS.transformToPDW(frequency); 
+          data_array[arrReadIndex] = DDS.transformToPDW(frequency); //Convert frequency integer to ParallelPort Data Word
           arrReadIndex +=1;
         }
         
@@ -288,6 +279,7 @@ void getDataFromPC(uint32_t data_array[]) {
   }
 }
 
+// This function is only necessary when using slowly setting Frequency and Amplitude
 //void parseData(profile_t data_array[], int index ) {
 //  // split the data into its parts
 //    
@@ -309,12 +301,6 @@ void replyToPC() {
     Serial.print("<");
     Serial.print("Profiles recieved: ");
     Serial.print(arrReadIndex);
-    Serial.print(",");
-    Serial.print(AD9910_PDW_array[0]);
-    Serial.print(",");
-    Serial.print(AD9910_PDW_array[1]);
-    Serial.print(",");
-    Serial.print(frequency);
     Serial.println(">");
     transitionToBuffered  = false;
     dataTransmissionFinished = true;
@@ -327,6 +313,7 @@ void sendFinishtoPC() {
   Serial.println(">");
 }
 
+// This function is only necessary when using slowly setting Frequency and Amplitude
 //void setProfileTriggeredFast() {
 //  PIOD->PIO_CODR = PIO_CODR_P3;  // Be sure to start with a low level for Trigger pin
 //  //Assumed working principle: PIOD is a pointer to Port D (all D-Pins).
