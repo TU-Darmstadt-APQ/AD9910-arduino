@@ -92,7 +92,11 @@ void loop() {
     //PIOC->PIO_SODR = 0x000ff1fe;
     //PIOC->PIO_CODR = 0x000ff1fe;
     //Set frequency via ParallelPort:
-    setPPFreqFast(AD9910_PDW_array[arrWriteIndex]);
+    PIOC->PIO_SODR = PIO_SODR_P9;
+    PIOC->PIO_ODSR = AD9910_PDW_array[arrWriteIndex];
+    //REG_PIOC_ODSR = port_data_word;
+    PIOC->PIO_CODR = PIO_CODR_P9;
+    //setPPFreqFast(AD9910_PDW_array[arrWriteIndex]);
     //Set ParallelPort low:
     PIOC->PIO_CODR = 0x000ff1fe;
     
