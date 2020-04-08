@@ -112,6 +112,36 @@ void setup() {
   PIOD->PIO_IER = PIO_IER_P3;
 }
 
+//needs to be places here for correct compiling:
+inline void setFrequencyTriggeredFast() __attribute__((always_inline));
+
+void setFrequencyTriggeredFast() {
+    if ((PIOD->PIO_ISR & PIO_ISR_P3) == PIO_ISR_P3) {
+
+    // Toggle pin 13
+    //PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // low to high by using xor operation between ...?
+   
+    //Currently Setting Frequency via ParallelPort:
+    PIOB->PIO_SODR = PIO_SODR_P14;
+    PIOC->PIO_ODSR = AD9910_PDW_array[arrWriteIndex];
+    PIOB->PIO_CODR = PIO_CODR_P14;
+    //Could be used via inline function:
+    //DDS.setPPFreqFast(AD9910_PDW_array[arrWriteIndex]);
+    
+        
+    arrWriteIndex++;
+      //Stop execution when we are at the end of the array
+      //arrReadIndex has to be reduced by one as during data transmission it is increased +1 after last received dataset.
+      if (arrWriteIndex > arrReadIndex-1){
+        transitionToManual = true;
+        //dataTransmissionFinished = false;
+        arrWriteIndex = 0;
+      }
+    //PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // high to low
+    }
+    
+}
+
 void loop() {
   if(Serial.available() > 0) {
     char x = Serial.read();
@@ -337,42 +367,3 @@ void sendFinishtoPC() {
 //    // Add a delay if necessary to wait for the end of the thunder
 //    // and avoid toggling once more ??
 //}
-
-void setFrequencyTriggeredFast() {
-  PIOD->PIO_CODR = PIO_CODR_P3;  // Be sure to start with a low level for Trigger pin
-  //Assumed working principle: PIOD is a pointer to Port D (all D-Pins).
-  //PIO_CODR is a 32bit register which is set 1 for Pin3 meaning it will set Pin3 low as it sets all high-entries to low
-  //Due to the dereference operator -> Port D is set as PIO_CODR -> Pin3 is set low. 
-    // wait until pin 28 is high:
-    //while ((PIOD->PIO_PDSR & PIO_PDSR_P3) == 0);
-    if ((PIOD->PIO_ISR & PIO_ISR_P3) == PIO_ISR_P3) {
-    // PIO_PDSR_P3 is a data status register for Pin3 (bit 3 is high)
-    // PIOD->PIO_PDSR is the current value of the data status register of Port D
-    // PDSR is high if Input is high
-    // If they are both 1 the AND-operator & makes the result 1 and we exit the while loop
-
-    // Toggle pin 13
-    //PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // low to high by using xor operation between ...?
-    // PIO_ODSR_P27 is high at 27th bit.
-    // New value of PIO_ODSR of Port B (PIOB->PIO_ODSR) is the xor-result of old PIOB->PIO_ODSR and PIO_ODSR_P27
-    
-    //Insert here the function to run:
-    //Currently Setting Frequency via ParallelPort:
-    DDS.setPPFreqFast(AD9910_PDW_array[arrWriteIndex]);
-    //delayMicroseconds(1);
-        
-    arrWriteIndex++;
-      //Stop execution when we are at the end of the array
-      //arrReadIndex has to be reduced by one as during data transmission it is increased +1 after last received dataset.
-      if (arrWriteIndex > arrReadIndex-1){
-        transitionToManual = true;
-        //dataTransmissionFinished = false;
-        arrWriteIndex = 0;
-      }
-    //PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // high to low
-    //Avoid toggling once more if the pulse is to long:
-    //((~PIOD->PIO_PDSR) & PIO_PDSR_P3) is only one if P3 goes low.
-    //while (((~PIOD->PIO_PDSR) & PIO_PDSR_P3) == 0);
-    }
-    
-}
