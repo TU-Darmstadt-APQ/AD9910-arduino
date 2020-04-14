@@ -164,7 +164,7 @@ void loop() {
     
     //transition_to_manual:
     while (transitionToManual == true) {
-      //sendFinishtoPC();  //Commented out as Labscript implementation currently cannot handle a feedback after shot is finished
+      sendFinishtoPC();
       transitionToManual = false;
       bufferedMode=false;
       manualMode=false;
