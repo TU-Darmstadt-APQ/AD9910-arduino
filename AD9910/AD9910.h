@@ -15,8 +15,6 @@
    aunsigned long with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-//// THIS NEEDS TO BE UPDATED!! USING OLD VERSION FOR TESTING
-
 #ifndef AD9910_h
 #define AD9910_h
 
@@ -82,6 +80,7 @@ class AD9910
     void setOSKAmp(double scaledAmp);
     // Set FTW Register:
     void setFTWRegister(uint32_t freq);
+    // Function to transform frequency to ParallelPort data word:
     uint32_t transformToPDW(uint32_t freq);
     /*  *********************** to implement later ***************
     // places DDS in linear sweep mode
@@ -103,27 +102,27 @@ class AD9910
     //disable the Sync Clck output
     void disableSyncClck();
     //Change active profile mode:
-    void selectProfile(byte);
-    //Get currently active profile
-    uint8_t getProfile();
 */
     //Get currently active profile
     uint8_t getProfile();
+
+    //Write Register:
     void writeRegister(reg_t payload);
 
   private:
     // Instance variables that hold pinout mapping
     // from arduino to DDS pins.
     int _ssPin, _resetPin, _updatePin, _ps0, _ps1, _ps2, _osk, _fancy, _FM_gain;
-    // Instance variables for frequency _freq, frequency tuning word _ftw,
-    // reference clock frequency _refClk, etc.
+    // Instance variables for arrays in profile mode: frequency _freq, frequency tuning word _ftw, amplitude scale factor _asf,
+    // reference clock frequency _refClk, amplitude scale factor _ASF, frequency tuning word _FTW,
+    // frequency data word _fdw and different parts of the port data word
     unsigned long _freq[8], _ftw[8], _refClk, _asf[8], _ASF, _FTW, _fdw, _port_data_word_lower, _port_data_word_upper, _port_data_word;
+    //Instance variables for amplitude arrays in profile mode: 
     double _scaledAmp[8], _scaledAmpdB[8];
+    //Instance variable for active profile:
     uint8_t _activeProfile;
     // Instance variables to keep track of the DDS mode:
     bool _OSKon, _parallel_programming;
-    // write amplitude tuning word to device
-    //void writeAmp(long ampScaleFactor, uint8_t profile);
     // write Freq/Amp/Phase to profile:
     void writeProfile(byte profile);
     // DDS frequency resolution
@@ -131,9 +130,6 @@ class AD9910
 };
 
 //Inlined_functions:
-
-//inline void AD9910::setPPFreqFast(uint32_t port_data_word) __attribute__((always_inline));
-
 void AD9910::setPPFreqFast(uint32_t port_data_word){
   // Set Trigger for delay
   //PIOB -> PIO_SODR = PIO_SODR_P27;
