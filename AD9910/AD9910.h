@@ -37,7 +37,7 @@ class AD9910
 
   public:
     // Constructor function.
-    AD9910(int ssPin, int resetPin, int updatePin, int ps0, int ps1, int ps2, int osk);
+    AD9910(int ssPin, int resetPin, int updatePin, int ps0, int ps1, int ps2, int osk, int f0, int f1);
     AD9910(int ssPin, int resetPin, int updatePin, int ps0);
     // Initialize with refIn frequency, and clock multiplier value
     void initialize(unsigned long ref, uint8_t mult, uint8_t FM_gain, bool oskEnable, bool parallel_programming);
@@ -112,7 +112,7 @@ class AD9910
   private:
     // Instance variables that hold pinout mapping
     // from arduino to DDS pins.
-    int _ssPin, _resetPin, _updatePin, _ps0, _ps1, _ps2, _osk, _fancy, _FM_gain;
+    int _ssPin, _resetPin, _updatePin, _ps0, _ps1, _ps2, _f0, _f1, _txEnable, _osk, _fancy, _FM_gain;
     // Instance variables for arrays in profile mode: frequency _freq, frequency tuning word _ftw, amplitude scale factor _asf,
     // reference clock frequency _refClk, amplitude scale factor _ASF, frequency tuning word _FTW,
     // frequency data word _fdw and different parts of the port data word
@@ -134,7 +134,7 @@ void AD9910::setPPFreqFast(uint32_t port_data_word){
   // Set Trigger for delay
   //PIOB -> PIO_SODR = PIO_SODR_P27;
   //PIOB -> PIO_CODR = PIO_CODR_P27;
-  //Set parallel Port C:
+  //Set parallel Port C using TxEnable as Gate(Pin 53):
   PIOB->PIO_SODR = PIO_SODR_P14;
   PIOC->PIO_ODSR = port_data_word;
   PIOB->PIO_CODR = PIO_CODR_P14;

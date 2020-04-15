@@ -23,7 +23,7 @@
 /* CONSTRUCTOR */
 
 // Constructor function; initializes communication pinouts
-AD9910::AD9910(int ssPin, int resetPin, int updatePin, int ps0, int ps1, int ps2, int osk) // reset = master reset
+AD9910::AD9910(int ssPin, int resetPin, int updatePin, int ps0, int ps1, int ps2, int osk, int f0, int f1) // reset = master reset
 {
   RESOLUTION  = 4294967296.0;
   _ssPin = ssPin;
@@ -34,6 +34,9 @@ AD9910::AD9910(int ssPin, int resetPin, int updatePin, int ps0, int ps1, int ps2
   _ps2 = ps2;
   _osk = osk;
   _fancy = 1; // flag to keep track of extra functionality
+  _f0=f0;
+  _f1=f1;
+  _txEnable = 53;   //Set TxEnable Pin to digital pin 53; this is fixed.
 }
 
 // alternate constructor function only using profile 0; initializes communication pinouts
@@ -75,18 +78,18 @@ void AD9910::initialize(unsigned long ref, uint8_t divider, uint8_t FM_gain, boo
         pinMode(PP_Pins[a], OUTPUT);
         digitalWrite(PP_Pins[a], LOW); 
     }
-    pinMode(2, OUTPUT);
-    pinMode(3, OUTPUT);
-    pinMode(53, OUTPUT);
+    pinMode(_f0, OUTPUT);
+    pinMode(_f1, OUTPUT);
+    pinMode(_txEnable, OUTPUT);
     // Configure Parallel Port Destination to frequency:
-    digitalWrite(2, LOW);
-    digitalWrite(3, HIGH);
+    digitalWrite(_f0, LOW);
+    digitalWrite(_f1, HIGH);
     // Mask the output for the corresponding pins; BE CAREFUL: Interrupts can destroy this!
     REG_PIOC_OWER = 0x000ff1fe; // Enable output writing for all PP_Pins as HEX: 0x000FF1FE
     REG_PIOC_OWDR = 0xfff00e01; // Disable output writing for all other Pins
   } 
   //else {
-  // set pinmodes and mask for PortD pins 25-27
+  // set pinmodes for profile pins and mask for PortD pins 25-27
   pinMode(25, OUTPUT);
   pinMode(26, OUTPUT);
   pinMode(27, OUTPUT);

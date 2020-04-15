@@ -6,24 +6,34 @@
 //Define pin mappings:
 #define CSPIN 14                        // DDS chip select pin. Digital input (active low). Bringing this pin low enables detection of serial clock edges.
 #define OSKPIN 15                       // DDS Output Shift Keying. Digital input.
-#define PS0PIN 5                        // DDS PROFILE[0] pin. Profile Select Pins. Digital input. Use these pins to select one of eight profiles for the DDS.
-#define PS1PIN 6                        // DDS PROFILE[1] pin. Profile Select Pins. Digital input. Use these pins to select one of eight profiles for the DDS.
-#define PS2PIN 7                        // DDS PROFILE[2] pin. Profile Select Pins. Digital input. Use these pins to select one of eight profiles for the DDS.
+#define PS0PIN 25                       // DDS PROFILE[0] pin. Profile Select Pins. Digital input. Use these pins to select one of eight profiles for the DDS.
+#define PS1PIN 26                       // DDS PROFILE[1] pin. Profile Select Pins. Digital input. Use these pins to select one of eight profiles for the DDS.
+#define PS2PIN 27                       // DDS PROFILE[2] pin. Profile Select Pins. Digital input. Use these pins to select one of eight profiles for the DDS.
 #define IO_UPDATEPIN  11 //was9         // DDS I/O_UPDATE pin. Digital input. A high on this pin transfers the contents of the buffers to the internal registers.
 #define RESETPIN 12  //was10            // DDS MASTER_RESET pin. Digital input. Clears all memory elements and sets registers to default values.
 #define TRIGGERIN 28                    // Pin to trigger the Arduino
 #define TRIGGEROUT 13                   // Pin to trigger events with the Arduino
+#define F0PIN 30                        // Pin to select ParallelPort Mode
+#define F1PIN 32                        // Pin to select ParallelPort Mode
+
+/*
+//Pins for ramp generation:
+#define DROVER 19                       // Input Pin to detect end of ramp
+#define DRCTL 18                        // Pin to control Slope polarity
+#define DRHOLD 17                       // Pin to hold the ramp generator
+#define IO_RESET 16                       // Pin to reset Serial Communication
+ */
 
 //Definitions for DDS:
 int divider=25;                         // System clock is ref clk * divider
-int ref_clk=40000000;                   //Reference clock is 40 MHz
+int ref_clk=40000000;                   // Reference clock is 40 MHz
 const double RESOLUTION  = 4294967296.0;
 int FM_gain = 0xf;
 bool oskEnable = true;
 bool parallel_programming = true;
 
 //Declare the DDS object:
-AD9910 DDS(CSPIN, RESETPIN, IO_UPDATEPIN, PS0PIN, PS1PIN, PS2PIN, OSKPIN);
+AD9910 DDS(CSPIN, RESETPIN, IO_UPDATEPIN, PS0PIN, PS1PIN, PS2PIN, OSKPIN, F0PIN, F1PIN);
 
 //Define data type to save frequency, amplitude, profile:
 typedef struct{
@@ -125,7 +135,7 @@ void setFrequencyTriggeredFast() {
       //arrReadIndex has to be reduced by one as during data transmission it is increased +1 after last received dataset.
       if (arrWriteIndex > arrReadIndex-1){
         transitionToManual = true;
-        dataTransmissionFinished = false;  //Comment out for test purposes with labscript at home
+        //dataTransmissionFinished = false;  //Comment out for test purposes with labscript at home
         arrWriteIndex = 0;
       }
     //PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // high to low
