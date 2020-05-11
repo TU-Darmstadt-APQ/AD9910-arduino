@@ -246,7 +246,7 @@ void AD9910::setAmp(double scaledAmp, byte profile){
 }
 
 void AD9910::setAmpSF(unsigned long AmpSF, byte profile){
-   // Use a scaledAmplitude between 0 and 1
+   // Use the amplitude scale factor between 0 and 16383 (2^14-1)
    if (profile > 7) {
         return; //invalid profile, return without doing anything
    }
@@ -263,6 +263,7 @@ void AD9910::setAmpSF(unsigned long AmpSF, byte profile){
 }
 
 void AD9910::setAmpdB(double scaledAmpdB, byte profile){
+  // Use the amplitude given in dB; value must be smaller than 0
   if (profile > 7) {
         return; //invalid profile, return without doing anything
    }
@@ -360,6 +361,30 @@ uint32_t AD9910::transformToPDW(uint32_t freq) {
   _port_data_word = _port_data_word_lower | _port_data_word_upper; 
   return _port_data_word; 
 } 
+
+// Set phase as value between 0 and 360 degrees:
+void AD9910::setPhase(double phase, byte profile) {
+  if (profile > 7) {
+    return; //invalid profile, return without doing anything
+  }
+
+  _phase[profile] = phase;
+  _pow[profile] = round((fmod(phase,360.0)/360)*65536);
+
+  AD9910::writeProfile(profile);
+}
+
+void AD9910::setPOW(unsigned long Pow, byte profile) {
+  if (profile > 7) {
+    return; //invalid profile, return without doing anything
+  }
+
+  _pow[profile] = Pow;
+  _phase[profile] = 360*(Pow/65536);
+
+  AD9910::writeProfile(profile);
+}
+
 
 void AD9910::setOSKAmp(double scaledAmp){
 
@@ -482,7 +507,7 @@ void AD9910::writeProfile(byte profile) {
    //Set frequency block:
    payload.data.block[0] = _ftw[profile];
    // Set amplitude/phase block:
-   payload.data.block[1] = (_asf[profile] << 16 ) | 0x0000; // Set phase to 0x0000
+   payload.data.block[1] = (_asf[profile] << 16 ) | _pow[profile]; // Set phase to 0x0000
    
    // actually writes to register
    //AD9910::writeRegister(payload);

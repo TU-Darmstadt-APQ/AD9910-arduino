@@ -29,8 +29,8 @@ int divider=25;                         // System clock is ref clk * divider
 int ref_clk=40000000;                   // Reference clock is 40 MHz
 const double RESOLUTION  = 4294967296.0;
 int FM_gain = 0xf;
-bool oskEnable = true;
-bool parallel_programming = true;
+bool oskEnable = false;
+bool parallel_programming = false;
 
 //Declare the DDS object:
 AD9910 DDS(CSPIN, RESETPIN, IO_UPDATEPIN, PS0PIN, PS1PIN, PS2PIN, OSKPIN, F0PIN, F1PIN);
@@ -96,12 +96,18 @@ void setup() {
   //Initialize DDS:
   DDS.initialize(ref_clk,divider, FM_gain, oskEnable, parallel_programming);
   //Set Frequency and Amplitude for ParallelPort Frequency Modification
-  DDS.setFTWRegister(2000000);
-  DDS.setPPFreq(1000000);
-  DDS.setOSKAmp(1.0);
-  //DDS.setFreq(1000000,0);
-  //DDS.setAmp(0.5,0);
-  //DDS.setProfile(0);
+  //DDS.setFTWRegister(2000000);
+  //DDS.setPPFreq(1000000);
+  //DDS.setOSKAmp(1.0);
+  
+  //Set Freq, Amp, Phase for Profile Mode:
+  DDS.setFreq(1000000,0);
+  DDS.setAmp(1,0);
+  DDS.setPhase(0,0);
+  DDS.setFreq(1000000,1);
+  DDS.setAmp(1,1);
+  DDS.setPhase(180,1);
+  DDS.setProfile(0);
 
   //Set Trigger Connections:
   delay (10);
@@ -143,59 +149,74 @@ void setFrequencyTriggeredFast() {
     
 }
 
-// Program loop:
-void loop() {
-  //Wait for new instruction starting with correct MARKER:
-  if(Serial.available() > 0) {
-    char x = Serial.read();
-    if (x==MANUALMODEMARKER) {
-      manualMode=true;
-      bufferedMode=false;
-    } else if (x==BUFFEREDMODEMARKER) {
-      manualMode=false;
-      bufferedMode=true;
-      transitionToBuffered=true;
-    }
-  }
-  
-  // Start buffered Mode:
-  while (bufferedMode == true) {
-    
-    //transition_to_buffered:
-    while (transitionToBuffered == true) { //loop not necessary, left for conceptual reasons
-      getDataFromPC(AD9910_PDW_array);
-      replyToPC();
-    }
-    
-    //Shot ongoing:
-    while (dataTransmissionFinished == true) {
-      setFrequencyTriggeredFast();
-    }
-    
-    //transition_to_manual:
-    while (transitionToManual == true) {
-      sendFinishtoPC();
-      transitionToManual = false;
-      bufferedMode=false;
-      manualMode=false;
-    }
-  }
+// Program Loop for Testing:
 
-  //Start manual Mode:
-  while (manualMode == true) {
-      getDataFromPC(AD9910_PDW_array);
-      replyToPC();
-    
-    //Set frequency after all data has been received:
-    if (dataTransmissionFinished == true) {
-      DDS.setPPFreqFast(AD9910_PDW_array[0]);
-      dataTransmissionFinished = false;
-      bufferedMode=false; 
-      manualMode=false;
-    }
-  }
-  
+void loop() {
+// Toggle pin 13
+  PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // low to high
+  DDS.setProfile(0);
+  PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // high to low
+  delay(1000);
+  PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // low to high
+  DDS.setProfile(1);
+  PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // high to low
+  delay(1000);
 }
+
+
+//// Labscript Program loop:
+//void loop() {
+//  //Wait for new instruction starting with correct MARKER:
+//  if(Serial.available() > 0) {
+//    char x = Serial.read();
+//    if (x==MANUALMODEMARKER) {
+//      manualMode=true;
+//      bufferedMode=false;
+//    } else if (x==BUFFEREDMODEMARKER) {
+//      manualMode=false;
+//      bufferedMode=true;
+//      transitionToBuffered=true;
+//    }
+//  }
+//  
+//  // Start buffered Mode:
+//  while (bufferedMode == true) {
+//    
+//    //transition_to_buffered:
+//    while (transitionToBuffered == true) { //loop not necessary, left for conceptual reasons
+//      getDataFromPC(AD9910_PDW_array);
+//      replyToPC();
+//    }
+//    
+//    //Shot ongoing:
+//    while (dataTransmissionFinished == true) {
+//      setFrequencyTriggeredFast();
+//    }
+//    
+//    //transition_to_manual:
+//    while (transitionToManual == true) {
+//      sendFinishtoPC();
+//      transitionToManual = false;
+//      bufferedMode=false;
+//      manualMode=false;
+//    }
+//  }
+//
+//  //Start manual Mode:
+//  while (manualMode == true) {
+//      getDataFromPC(AD9910_PDW_array);
+//      replyToPC();
+//    
+//    //Set frequency after all data has been received:
+//    if (dataTransmissionFinished == true) {
+//      DDS.setPPFreqFast(AD9910_PDW_array[0]);
+//      dataTransmissionFinished = false;
+//      bufferedMode=false; 
+//      manualMode=false;
+//    }
+//  }
+//  
+//}
 
 // This function is necessary for transmission of Frequency, Amplitude (and Phase):
 //void getDataFromPC(profile_t data_array[]) {
@@ -244,7 +265,7 @@ void loop() {
 //  }
 //}
 
-// Get frequency data rom PC:
+// Get frequency data from PC:
 void getDataFromPC(uint32_t data_array[]) {
   
   // receive data from PC and save it into inputBuffer  

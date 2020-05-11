@@ -46,7 +46,7 @@ class AD9910
     // Update to load newly written settings
     void update();
     
-    // Sets frequency
+    // Sets frequency, amplitude, phase
     void setFreq(unsigned long freq, uint8_t profile = 0);
     // Sets frequency tuning word
     void setFTW(unsigned long ftw, uint8_t profile = 0);
@@ -60,6 +60,10 @@ class AD9910
     // Sets profile used
     void setProfile(uint8_t profile = 0);
     void setProfileFast(uint8_t profile = 0);
+    // Sets phase
+    void setPhase(double phase, byte profile);
+    void setPOW(unsigned long Pow, byte profile);
+
 
     //Get Frequency
     unsigned long getFreq(uint8_t profile = 0);
@@ -116,9 +120,9 @@ class AD9910
     // Instance variables for arrays in profile mode: frequency _freq, frequency tuning word _ftw, amplitude scale factor _asf,
     // reference clock frequency _refClk, amplitude scale factor _ASF, frequency tuning word _FTW,
     // frequency data word _fdw and different parts of the port data word
-    unsigned long _freq[8], _ftw[8], _refClk, _asf[8], _ASF, _FTW, _fdw, _port_data_word_lower, _port_data_word_upper, _port_data_word;
-    //Instance variables for amplitude arrays in profile mode: 
-    double _scaledAmp[8], _scaledAmpdB[8];
+    unsigned long _freq[8], _ftw[8], _refClk, _asf[8], _pow[8], _ASF, _FTW, _fdw, _port_data_word_lower, _port_data_word_upper, _port_data_word;
+    //Instance variables for amplitude and phase arrays in profile mode: 
+    double _scaledAmp[8], _scaledAmpdB[8], _phase[8];
     //Instance variable for active profile:
     uint8_t _activeProfile;
     // Instance variables to keep track of the DDS mode:
