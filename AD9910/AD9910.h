@@ -86,6 +86,11 @@ class AD9910
     void setFTWRegister(uint32_t freq);
     // Function to transform frequency to ParallelPort data word:
     uint32_t transformToPDW(uint32_t freq);
+
+    //RAM programming:
+    void enableRamFreq();
+    void programRAM(uint32_t data_array[], byte profile, uint16_t start_addr, uint16_t end_addr, uint16_t step_rate, byte RAM_mode, byte no_dwell, byte zero_cross);
+    
     /*  *********************** to implement later ***************
     // places DDS in linear sweep mode
     //void linearSweep(unsigned long, unsigned long, unsigned long, byte, unsigned long, byte);

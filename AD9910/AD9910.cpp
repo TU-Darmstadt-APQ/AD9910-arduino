@@ -408,7 +408,7 @@ void AD9910::setFTWRegister(uint32_t freq){
   
   reg_t FTW_reg;
   FTW_reg.addr = 0x07;
-  FTW_reg.data.bytes[0] = _FTW & 0xff ;  //disable Sync timing validation (default); enable Parallel data port; set FM gain to maximum;
+  FTW_reg.data.bytes[0] = _FTW & 0xff ;
   FTW_reg.data.bytes[1] = ((_FTW & 0xff00) >> 8);
   FTW_reg.data.bytes[2] = ((_FTW & 0xff0000) >> 16);  
   FTW_reg.data.bytes[3] = ((_FTW & 0xff000000) >> 24);
@@ -476,10 +476,66 @@ bool AD9910::getOSKMode() {
   return _OSKon;
 }
 
-
-
-
 */
+
+void AD9910::enableRamFreq() {
+  // change CFR1 bytes, get Amplitude from OSK:
+  reg_t _cfr1;
+  _cfr1.addr = 0x00;
+  _cfr1.data.bytes[0] = 0x00;  
+  _cfr1.data.bytes[1] = 0x02;  // Enable Output shift keying in manual mode. Amplitude Scale Factor set via Register 9.
+  _cfr1.data.bytes[2] = 0x80;
+  _cfr1.data.bytes[3] = 0x80;  //chose RAM enable and frequency (00) as destination
+  writeRegister(_cfr1);
+  update();
+}
+
+void AD9910::programRAM(uint32_t data_array[2], byte profile, uint16_t start_addr, uint16_t end_addr, uint16_t step_rate, byte RAM_mode, byte no_dwell, byte zero_cross ) {
+//Program profile register
+  reg_t payload;
+  payload.bytes = 8;
+  payload.addr = 0x0E + profile;
+  payload.data.bytes[0] = (no_dwell << 5) | (zero_cross << 3) | RAM_mode;
+  payload.data.bytes[1] = (start_addr << 6) & 0xff;
+  payload.data.bytes[2] = (((start_addr << 6) & 0xff00) >> 8);
+  payload.data.bytes[3] = (end_addr << 6) & 0xff;
+  payload.data.bytes[4] = (((end_addr << 6) & 0xff00) >> 8);
+  payload.data.bytes[5] = (step_rate & 0xff); // Bits 0 to 7 step rate
+  payload.data.bytes[6] = ((step_rate & 0xff00) >> 8); // Bits 8 to 15 step rate
+  payload.data.bytes[7] = 0x00;
+  
+  // actually writes to register
+  //AD9910::writeRegister(payload);
+  writeRegister(payload);
+  update();
+
+  //Set profile to write to:
+  setProfileFast(profile);
+
+  //start RAM writing process:
+  reg_t RAMword;
+  RAMword.addr = 0x16;
+  SPI.beginTransaction(SPISettings(CLOCKSPEED, MSBFIRST, SPI_MODE0));
+  digitalWrite(_ssPin, LOW);
+  SPI.transfer(RAMword.addr);
+  for (int i=0; i<(end_addr-start_addr+1); i++) {
+    Serial.println(i);
+    
+    RAMword.data.bytes[0] = data_array[i] & 0xff ;
+    RAMword.data.bytes[1] = ((data_array[i] & 0xff00) >> 8);
+    RAMword.data.bytes[2] = ((data_array[i] & 0xff0000) >> 16);  
+    RAMword.data.bytes[3] = ((data_array[i] & 0xff000000) >> 24);
+    
+    // MSB
+    for (int i = RAMword.bytes; i > 0; i--){
+      SPI.transfer(RAMword.data.bytes[i-1]);
+    }
+    
+  }
+  digitalWrite(_ssPin, HIGH);
+  SPI.endTransaction();
+  update();
+}
 
 // Writes SPI to particular register.
 //      registerInfo is a 2-element array which contains [register, number of bytes]

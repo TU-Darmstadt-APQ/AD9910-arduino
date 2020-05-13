@@ -29,7 +29,7 @@ int divider=25;                         // System clock is ref clk * divider
 int ref_clk=40000000;                   // Reference clock is 40 MHz
 const double RESOLUTION  = 4294967296.0;
 int FM_gain = 0xf;
-bool oskEnable = false;
+bool oskEnable = true;
 bool parallel_programming = false;
 
 //Declare the DDS object:
@@ -98,10 +98,10 @@ void setup() {
   //Set Frequency and Amplitude for ParallelPort Frequency Modification
   //DDS.setFTWRegister(2000000);
   //DDS.setPPFreq(1000000);
-  //DDS.setOSKAmp(1.0);
+  DDS.setOSKAmp(1.0);
   
   //Set Freq, Amp, Phase for Profile Mode:
-  DDS.setFreq(1000000,0);
+  DDS.setFreq(2000000,0);
   DDS.setAmp(1,0);
   DDS.setPhase(0,0);
   DDS.setFreq(1000000,1);
@@ -109,17 +109,31 @@ void setup() {
   DDS.setPhase(180,1);
   DDS.setProfile(0);
 
+  delay(1000);
+
   //Set Trigger Connections:
   delay (10);
   pinMode(TRIGGERIN, INPUT);
   pinMode(TRIGGEROUT, OUTPUT);
   digitalWrite(TRIGGEROUT, LOW);
 
-  //Initialize Edge detection of Atmel SAM3X8E at Arduino Pin28( Port D.3):
-  PIOD->PIO_AIMER = PIO_AIMER_P3; //Essentially important to not interrupt on falling edge, I don't know why.
-  PIOD->PIO_ESR = PIO_ESR_P3;
-  PIOD->PIO_REHLSR = PIO_REHLSR_P3; // The interrupt source is a Rising Edge
-  PIOD->PIO_IER = PIO_IER_P3;
+//  //Initialize Edge detection of Atmel SAM3X8E at Arduino Pin28( Port D.3):
+//  PIOD->PIO_AIMER = PIO_AIMER_P3; //Essentially important to not interrupt on falling edge, I don't know why.
+//  PIOD->PIO_ESR = PIO_ESR_P3;
+//  PIOD->PIO_REHLSR = PIO_REHLSR_P3; // The interrupt source is a Rising Edge
+//  PIOD->PIO_IER = PIO_IER_P3;
+
+  //Program Ram:
+  int ramNum=3;
+  uint32_t RAM_data_array[ramNum];
+  RAM_data_array[0] = 16777216;//42949673;
+  RAM_data_array[1] = 33554432;
+  RAM_data_array[2] = 16777216;
+  RAM_data_array[3] = 33554432;
+  
+  //programRAM(data_array[], profile, uint16_t start_addr, uint16_t end_addr, uint16_t step_rate, byte RAM_mode, bool no_dwell, byte zero_cross ) 
+  DDS.programRAM(RAM_data_array, 0, 0, ramNum, 500, 4, 0, 0);
+  DDS.enableRamFreq();
 }
 
 //Inline function needs to be places here for correct compiling:
@@ -154,11 +168,11 @@ void setFrequencyTriggeredFast() {
 void loop() {
 // Toggle pin 13
   PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // low to high
-  DDS.setProfile(0);
+  //DDS.setProfile(0);
   PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // high to low
   delay(1000);
   PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // low to high
-  DDS.setProfile(1);
+  //DDS.setProfile(1);
   PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // high to low
   delay(1000);
 }
