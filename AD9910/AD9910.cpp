@@ -518,8 +518,8 @@ void AD9910::programRAM(uint32_t data_array[2], byte profile, uint16_t start_add
   SPI.beginTransaction(SPISettings(CLOCKSPEED, MSBFIRST, SPI_MODE0));
   digitalWrite(_ssPin, LOW);
   SPI.transfer(RAMword.addr);
-  for (int i=0; i<(end_addr-start_addr+1); i++) {
-    Serial.println(i);
+  for (int i=0; i<(end_addr-start_addr); i++) {
+    //Serial.println(i);
     
     RAMword.data.bytes[0] = data_array[i] & 0xff ;
     RAMword.data.bytes[1] = ((data_array[i] & 0xff00) >> 8);
