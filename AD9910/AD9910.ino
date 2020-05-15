@@ -124,13 +124,13 @@ void setup() {
 //  PIOD->PIO_IER = PIO_IER_P3;
 
   //Program Ram:
-  int ramSteps=1000; // maximum of 1024
+  int ramSteps=51; // maximum of 1024
   uint32_t RAM_data_array[ramSteps];
 
   // Define Modulation parameters
-  uint32_t modulator_frequency = 250000;  // in Hz
-  uint32_t carrier_frequency = 10000000;  // in Hz
-  float modulation_index = 5.0;
+  uint32_t modulator_frequency = 2500000;  // in Hz
+  uint32_t carrier_frequency = 100000000;  // in Hz
+  float modulation_index = 4.0;
 
   // Define time: 
   double update_time_step = 4.0e-9;
@@ -143,14 +143,14 @@ void setup() {
     RAM_data_array[i] = round(output_frequency * 4294967296 / (ref_clk*divider));
   }
   Serial.println(RAM_data_array[0]);
-  Serial.println(RAM_data_array[999]);
+  Serial.println(RAM_data_array[50]);
 //  RAM_data_array[0] = 16777216;//42949673;
 //  RAM_data_array[1] = 33554432;
 //  RAM_data_array[2] = 16777216;
 //  RAM_data_array[3] = 33554432;
   
   //programRAM(data_array[], profile, uint16_t start_addr, uint16_t end_addr, uint16_t step_rate, byte RAM_mode, bool no_dwell, byte zero_cross ) 
-  DDS.programRAM(RAM_data_array, 0, 0, ramSteps, step_rate, 4, 0, 0);
+  DDS.programRAM(RAM_data_array, 0, 0, ramSteps, step_rate, 3, 0, 0);
   DDS.enableRamFreq();
 }
 
