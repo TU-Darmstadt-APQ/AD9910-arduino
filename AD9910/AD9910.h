@@ -37,10 +37,10 @@ class AD9910
 
   public:
     // Constructor function.
-    AD9910(int ssPin, int resetPin, int updatePin, int ps0, int ps1, int ps2, int osk, int f0, int f1);
+    AD9910(int ssPin, int resetPin, int updatePin, int ps0, int ps1, int ps2, int osk, int f0, int f1, int txEnable);
     AD9910(int ssPin, int resetPin, int updatePin, int ps0);
     // Initialize with refIn frequency, and clock multiplier value
-    void initialize(unsigned long ref, uint8_t mult, uint8_t FM_gain, bool oskEnable, bool parallel_programming);
+    void initialize(unsigned long ref, uint8_t mult, uint8_t FM_gain, bool oskEnable, bool parallel_programming, char model);
     // Reset the DDS
     void reset();
     // Update to load newly written settings
@@ -131,6 +131,8 @@ class AD9910
     void writeProfile(byte profile);
     // DDS frequency resolution
     double RESOLUTION;// = 4294967296; // sets resolution to 2^32 = 32 bits. Using type double to avoid confusion with integer division...
+    // arduino model used
+    char _model;
 };
 
 //Inlined_functions:
@@ -138,10 +140,11 @@ void AD9910::setPPFreqFast(uint32_t port_data_word){
   // Set Trigger for delay
   //PIOB -> PIO_SODR = PIO_SODR_P27;
   //PIOB -> PIO_CODR = PIO_CODR_P27;
-  //Set parallel Port C using TxEnable as Gate(Pin 53):
-  PIOB->PIO_SODR = PIO_SODR_P14;
-  PIOC->PIO_ODSR = port_data_word;
-  PIOB->PIO_CODR = PIO_CODR_P14;
+  //Set parallel Port C using TxEnable as Gate:
+  PORTD = PORTD | 0x80; //txEnable high
+  PORTA = (port_data_word & 0xff);
+  PORTC = (port_data_word & 0xff00);
+  PORTD = PORTD & 0x7F; //txEnable low
 }
 
 

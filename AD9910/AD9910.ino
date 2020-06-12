@@ -4,17 +4,18 @@
 
 
 //Define pin mappings:
-#define CSPIN 14                        // DDS chip select pin. Digital input (active low). Bringing this pin low enables detection of serial clock edges.
-#define OSKPIN 15                       // DDS Output Shift Keying. Digital input.
-#define PS0PIN 25                       // DDS PROFILE[0] pin. Profile Select Pins. Digital input. Use these pins to select one of eight profiles for the DDS.
-#define PS1PIN 26                       // DDS PROFILE[1] pin. Profile Select Pins. Digital input. Use these pins to select one of eight profiles for the DDS.
-#define PS2PIN 27                       // DDS PROFILE[2] pin. Profile Select Pins. Digital input. Use these pins to select one of eight profiles for the DDS.
-#define IO_UPDATEPIN  11 //was9         // DDS I/O_UPDATE pin. Digital input. A high on this pin transfers the contents of the buffers to the internal registers.
-#define RESETPIN 12  //was10            // DDS MASTER_RESET pin. Digital input. Clears all memory elements and sets registers to default values.
+#define CSPIN 10                        // DDS chip select pin. Digital input (active low). Bringing this pin low enables detection of serial clock edges.
+#define OSKPIN 40                       // DDS Output Shift Keying. Digital input.
+#define PS0PIN 4                        // DDS PROFILE[0] pin. Profile Select Pins. Digital input. Use these pins to select one of eight profiles for the DDS.
+#define PS1PIN 3                        // DDS PROFILE[1] pin. Profile Select Pins. Digital input. Use these pins to select one of eight profiles for the DDS.
+#define PS2PIN 2                        // DDS PROFILE[2] pin. Profile Select Pins. Digital input. Use these pins to select one of eight profiles for the DDS.
+#define IO_UPDATEPIN  6                 // DDS I/O_UPDATE pin. Digital input. A high on this pin transfers the contents of the buffers to the internal registers.
+#define RESETPIN 9                      // DDS MASTER_RESET pin. Digital input. Clears all memory elements and sets registers to default values.
 #define TRIGGERIN 28                    // Pin to trigger the Arduino
 #define TRIGGEROUT 13                   // Pin to trigger events with the Arduino
 #define F0PIN 30                        // Pin to select ParallelPort Mode
 #define F1PIN 32                        // Pin to select ParallelPort Mode
+#define TXENABLE 38                     // Pin for ParallelPort programming
 
 /*
 //Pins for ramp generation:
@@ -31,9 +32,10 @@ const double RESOLUTION  = 4294967296.0;
 int FM_gain = 0xf;
 bool oskEnable = false;
 bool parallel_programming = false;
+char model = 'm';                       // Use 'm' for Mega and 'd' for Due
 
 //Declare the DDS object:
-AD9910 DDS(CSPIN, RESETPIN, IO_UPDATEPIN, PS0PIN, PS1PIN, PS2PIN, OSKPIN, F0PIN, F1PIN);
+AD9910 DDS(CSPIN, RESETPIN, IO_UPDATEPIN, PS0PIN, PS1PIN, PS2PIN, OSKPIN, F0PIN, F1PIN, TXENABLE);
 
 //Define data type to save frequency, amplitude, profile:
 typedef struct{
@@ -42,7 +44,7 @@ typedef struct{
   uint8_t profile=0;
 } profile_t;
 
-const int LENGTHARR = 20001;
+const int LENGTHARR = 2000;
 
 // Define the data array depending on the Mode used; CHOOSE ONLY ONE!:
 uint32_t AD9910_PDW_array[LENGTHARR];
@@ -94,7 +96,7 @@ void setup() {
   delay(10);
 
   //Initialize DDS:
-  DDS.initialize(ref_clk,divider, FM_gain, oskEnable, parallel_programming);
+  DDS.initialize(ref_clk,divider, FM_gain, oskEnable, parallel_programming, model);
   //Set Frequency and Amplitude for ParallelPort Frequency Modification
   //DDS.setFTWRegister(2000000);
   //DDS.setPPFreq(1000000);
@@ -153,14 +155,14 @@ void setFrequencyTriggeredFast() {
 
 void loop() {
 // Toggle pin 13
-  PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // low to high
-  DDS.setProfile(0);
-  PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // high to low
-  delay(1000);
-  PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // low to high
-  DDS.setProfile(1);
-  PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // high to low
-  delay(1000);
+//  PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // low to high
+//  DDS.setProfile(0);
+//  PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // high to low
+//  delay(1000);
+//  PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // low to high
+//  DDS.setProfile(1);
+//  PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // high to low
+//  delay(1000);
 }
 
 
