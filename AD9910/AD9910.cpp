@@ -150,10 +150,10 @@ void AD9910::initialize(unsigned long ref, uint8_t divider, uint8_t FM_gain, boo
   _cfr3.data.bytes[0] = divider << 1; // pll divider
   if (divider == 0){
     _cfr3.data.bytes[1] = 0x40;    // bypass pll
-    _cfr3.data.bytes[3] = 0x07;
+    _cfr3.data.bytes[3] = 0x37;
   } else {
     _cfr3.data.bytes[1] = 0x41;    // enable PLL
-    _cfr3.data.bytes[3] = 0x05;
+    _cfr3.data.bytes[3] = 0x35;
   }
   _cfr3.data.bytes[2] = 0x3F;
 

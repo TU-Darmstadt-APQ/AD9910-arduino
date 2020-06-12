@@ -150,8 +150,8 @@ void setup() {
 //  RAM_data_array[3] = 33554432;
   
   //programRAM(data_array[], profile, uint16_t start_addr, uint16_t end_addr, uint16_t step_rate, byte RAM_mode, bool no_dwell, byte zero_cross ) 
-  DDS.programRAM(RAM_data_array, 0, 0, ramSteps, step_rate, 3, 0, 0);
-  DDS.enableRamFreq();
+//  DDS.programRAM(RAM_data_array, 0, 0, ramSteps, step_rate, 3, 0, 0);
+//  DDS.enableRamFreq();
 }
 
 //Inline function needs to be places here for correct compiling:
