@@ -129,6 +129,8 @@ class AD9910
     bool _OSKon, _parallel_programming;
     // write Freq/Amp/Phase to profile:
     void writeProfile(byte profile);
+    // reverse Byte:
+    byte reverseByte(byte x);
     // DDS frequency resolution
     double RESOLUTION;// = 4294967296; // sets resolution to 2^32 = 32 bits. Using type double to avoid confusion with integer division...
     // arduino model used

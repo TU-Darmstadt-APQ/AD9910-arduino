@@ -350,7 +350,7 @@ void AD9910::setPPFreq(uint32_t freq){
   _FTW = round(freq * RESOLUTION / _refClk) ;
   _fdw = (_FTW >> _FM_gain)& 0xffff;
   _port_data_word_lower = (_fdw & 0xff);
-  _port_data_word_upper = reverseByte((_fdw & 0xff00));
+  _port_data_word_upper = AD9910::reverseByte((_fdw & 0xff00));
   //_port_data_word = _port_data_word_lower | _port_data_word_upper;
 
   //Set parallel Port A and Port C:
@@ -367,7 +367,7 @@ uint32_t AD9910::transformToPDW(uint32_t freq) {
   _FTW = round(freq * RESOLUTION / _refClk) ;
   _fdw = (_FTW >> _FM_gain)& 0xffff; 
   _port_data_word_lower = (_fdw & 0xff);
-  _port_data_word_upper = reverseByte((_fdw & 0xff00)); 
+  _port_data_word_upper = AD9910::reverseByte((_fdw & 0xff00)); 
   _port_data_word = _port_data_word_lower | _port_data_word_upper; 
   return _port_data_word; 
 } 

@@ -84,7 +84,7 @@ void setup() {
   delay(100);
   SPI.begin();
   SPI.setClockDivider(4);
-  SPI.setDataMode(SPI_MODE0,CSPIN);
+  SPI.setDataMode(SPI_MODE0);
   SPI.setBitOrder(MSBFIRST);
   
   // Begin serial connection with PC:
@@ -117,39 +117,39 @@ void setup() {
   pinMode(TRIGGEROUT, OUTPUT);
   digitalWrite(TRIGGEROUT, LOW);
 
-  //Initialize Edge detection of Atmel SAM3X8E at Arduino Pin28( Port D.3):
-  PIOD->PIO_AIMER = PIO_AIMER_P3; //Essentially important to not interrupt on falling edge, I don't know why.
-  PIOD->PIO_ESR = PIO_ESR_P3;
-  PIOD->PIO_REHLSR = PIO_REHLSR_P3; // The interrupt source is a Rising Edge
-  PIOD->PIO_IER = PIO_IER_P3;
+//  //Initialize Edge detection of Atmel SAM3X8E at Arduino Pin28( Port D.3):
+//  PIOD->PIO_AIMER = PIO_AIMER_P3; //Essentially important to not interrupt on falling edge, I don't know why.
+//  PIOD->PIO_ESR = PIO_ESR_P3;
+//  PIOD->PIO_REHLSR = PIO_REHLSR_P3; // The interrupt source is a Rising Edge
+//  PIOD->PIO_IER = PIO_IER_P3;
 }
 
-//Inline function needs to be places here for correct compiling:
-inline void setFrequencyTriggeredFast() __attribute__((always_inline));
-
-void setFrequencyTriggeredFast() {
-    //Takes approx 400ns:
-    if ((PIOD->PIO_ISR & PIO_ISR_P3) == PIO_ISR_P3) {
-
-    // Toggle pin 13
-    //PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // low to high by using xor operation between ...?
-   
-    //Setting Frequency via ParallelPort (as Inline Function):
-    DDS.setPPFreqFast(AD9910_PDW_array[arrWriteIndex]);
-    
-        
-    arrWriteIndex++;
-      //Stop execution when we are at the end of the array
-      //arrReadIndex has to be reduced by one as during data transmission it is increased +1 after last received dataset.
-      if (arrWriteIndex > arrReadIndex-1){
-        transitionToManual = true;
-        //dataTransmissionFinished = false;  //Comment out for test purposes with labscript at home
-        arrWriteIndex = 0;
-      }
-    //PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // high to low
-    }
-    
-}
+////Inline function needs to be places here for correct compiling:
+//inline void setFrequencyTriggeredFast() __attribute__((always_inline));
+//
+//void setFrequencyTriggeredFast() {
+//    //Takes approx 400ns:
+//    if ((PIOD->PIO_ISR & PIO_ISR_P3) == PIO_ISR_P3) {
+//
+//    // Toggle pin 13
+//    //PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // low to high by using xor operation between ...?
+//   
+//    //Setting Frequency via ParallelPort (as Inline Function):
+//    DDS.setPPFreqFast(AD9910_PDW_array[arrWriteIndex]);
+//    
+//        
+//    arrWriteIndex++;
+//      //Stop execution when we are at the end of the array
+//      //arrReadIndex has to be reduced by one as during data transmission it is increased +1 after last received dataset.
+//      if (arrWriteIndex > arrReadIndex-1){
+//        transitionToManual = true;
+//        //dataTransmissionFinished = false;  //Comment out for test purposes with labscript at home
+//        arrWriteIndex = 0;
+//      }
+//    //PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // high to low
+//    }
+//    
+//}
 
 // Program Loop for Testing:
 
