@@ -101,10 +101,10 @@ void setup() {
   //DDS.setOSKAmp(1.0);
   
   //Set Freq, Amp, Phase for Profile Mode:
-  DDS.setFreq(1000000,0);
+  DDS.setFreq(100000000,0);
   DDS.setAmp(1,0);
   DDS.setPhase(0,0);
-  DDS.setFreq(1000000,1);
+  DDS.setFreq(20000000,1);
   DDS.setAmp(1,1);
   DDS.setPhase(180,1);
   DDS.setProfile(0);
