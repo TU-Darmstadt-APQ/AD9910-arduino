@@ -114,57 +114,87 @@ void AD9910::initialize(unsigned long ref, uint8_t divider, uint8_t FM_gain, boo
   AD9910::reset();
 
   delay(1);
+//
+//  reg_t _cfr1;
+//  _cfr1.addr = 0x00;
+//  //_cfr1.data.bytes[0] = 0x00;                 //MSB first; SDIO is bidirectional
+//  _cfr1.data.bytes[0] = 0x02;                 //MSB first; SDIO is unidirectional
+//  if (OSKon == true){
+//    _cfr1.data.bytes[1] = 0x02;               // Enable Output shift keying in manual mode. Amplitude Scale Factor set via Register 9.
+//    _cfr1.data.bytes[2] = 0x80;               // Enable external Control.
+//    //_cfr1.data.bytes[1] = 0x00;
+//   // _cfr1.data.bytes[2] = 0x00;
+//  } else {
+//    _cfr1.data.bytes[1] = 0x00;
+//    _cfr1.data.bytes[2] = 0x00;
+//  }
+//  _cfr1.data.bytes[3] = 0x00;
+//  
+//  reg_t _cfr2;
+//  _cfr2.addr = 0x01;
+//  if (_parallel_programming == true){
+//    _cfr2.data.bytes[0] = 0x70 + 0x0f;  //disable Sync timing validation (default); enable Parallel data port; set FM gain to maximum;
+//    //_cfr2.data.bytes[0] = 0x20;
+//  } else {
+//    _cfr2.data.bytes[0] = 0x20 ;  //disable Sync timing validation (default)
+//  }
+//  _cfr2.data.bytes[1] = 0x0a;
+//  _cfr2.data.bytes[2] = 0x40;  // sync_clk pin disabled; not used
+//  if (OSKon == true) {
+//    _cfr2.data.bytes[3] = 0x00;  // enable ASF from single tone profiles
+//  } else {
+//    _cfr2.data.bytes[3] = 0x01;  // enable ASF from single tone profiles
+//  }
+//  
+//  reg_t _cfr3;
+//  _cfr3.addr = 0x02;
+//  _cfr3.data.bytes[0] = divider << 1; // pll divider
+//  if (divider == 0){
+//    _cfr3.data.bytes[1] = 0x40;    // bypass pll
+//    _cfr3.data.bytes[3] = 0x07;
+//  } else {
+//    _cfr3.data.bytes[1] = 0x41;    // enable PLL
+//    _cfr3.data.bytes[3] = 0x05;
+//  }
+//  _cfr3.data.bytes[2] = 0x3F;
+//
+//  reg_t _auxdac;
+//  _auxdac.addr = 0x03;
+//  _auxdac.data.bytes[0] = 0xFF;
+
 
   reg_t _cfr1;
   _cfr1.addr = 0x00;
-  _cfr1.data.bytes[0] = 0x00;
-  if (OSKon == true){
-    _cfr1.data.bytes[1] = 0x02;               // Enable Output shift keying in manual mode. Amplitude Scale Factor set via Register 9.
-    _cfr1.data.bytes[2] = 0x80;               // Enable external Control.
-    //_cfr1.data.bytes[1] = 0x00;
-   // _cfr1.data.bytes[2] = 0x00;
-  } else {
-    _cfr1.data.bytes[1] = 0x00;
-    _cfr1.data.bytes[2] = 0x00;
-  }
+  _cfr1.data.bytes[0] = 0x00;               //MSB first; SDIO is bidirectional
+  _cfr1.data.bytes[1] = 0x00;               // Enable Output shift keying in manual mode. Amplitude Scale Factor set via Register 9.
+  _cfr1.data.bytes[2] = 0x00;               // Enable external Control.
   _cfr1.data.bytes[3] = 0x00;
   
   reg_t _cfr2;
   _cfr2.addr = 0x01;
-  if (_parallel_programming == true){
-    _cfr2.data.bytes[0] = 0x70 + 0x0f;  //disable Sync timing validation (default); enable Parallel data port; set FM gain to maximum;
-    //_cfr2.data.bytes[0] = 0x20;
-  } else {
-    _cfr2.data.bytes[0] = 0x20 ;  //disable Sync timing validation (default)
-  }
-  _cfr2.data.bytes[1] = 0x0a;
-  _cfr2.data.bytes[2] = 0x00;  // sync_clk pin disabled; not used
-  if (OSKon == true) {
-    _cfr2.data.bytes[3] = 0x00;  // enable ASF from single tone profiles
-  } else {
-    _cfr2.data.bytes[3] = 0x01;  // enable ASF from single tone profiles
-  }
-  
-  reg_t _cfr3;
-  _cfr3.addr = 0x02;
-  _cfr3.data.bytes[0] = divider << 1; // pll divider
-  if (divider == 0){
-    _cfr3.data.bytes[1] = 0x40;    // bypass pll
-    _cfr3.data.bytes[3] = 0x07;
-  } else {
-    _cfr3.data.bytes[1] = 0x41;    // enable PLL
-    _cfr3.data.bytes[3] = 0x05;
-  }
-  _cfr3.data.bytes[2] = 0x3F;
+  _cfr2.data.bytes[0] = 0x20 ;  //disable Sync timing validation (default)
+  _cfr2.data.bytes[1] = 0x08;
+  _cfr2.data.bytes[2] = 0x00;  // sync_clk pin enabled (default)
+  _cfr2.data.bytes[3] = 0x00;  // enable ASF from single tone profiles
+//  
+//  reg_t _cfr3;
+//  _cfr3.addr = 0x02;
+//  _cfr3.data.bytes[0] = 0x00; // pll divider
+//  _cfr3.data.bytes[1] = 0x40;    // bypass pll: 41
+//  _cfr3.data.bytes[2] = 0x3F;
+//  _cfr3.data.bytes[3] = 0x1F;
+//  
+//
+//  reg_t _auxdac;
+//  _auxdac.addr = 0x03;
+//  _auxdac.data.bytes[0] = 0x7F;
 
-  reg_t _auxdac;
-  _auxdac.addr = 0x03;
-  _auxdac.data.bytes[0] = 0xFF;
+
 
   writeRegister(_cfr1);
   writeRegister(_cfr2);
-  writeRegister(_cfr3);
-  writeRegister(_auxdac);
+//  writeRegister(_cfr3);
+//  writeRegister(_auxdac);
   update();
 
   delay(1);
