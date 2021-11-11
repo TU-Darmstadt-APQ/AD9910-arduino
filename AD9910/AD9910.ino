@@ -30,7 +30,7 @@ int ref_clk=40000000;                   // Reference clock is 40 MHz
 const double RESOLUTION  = 4294967296.0;
 int FM_gain = 0xf;
 bool oskEnable = false;
-bool parallel_programming = false;
+bool parallel_programming = true;
 
 //Declare the DDS object:
 AD9910 DDS(CSPIN, RESETPIN, IO_UPDATEPIN, PS0PIN, PS1PIN, PS2PIN, OSKPIN, F0PIN, F1PIN);
@@ -96,18 +96,18 @@ void setup() {
   //Initialize DDS:
   DDS.initialize(ref_clk,divider, FM_gain, oskEnable, parallel_programming);
   //Set Frequency and Amplitude for ParallelPort Frequency Modification
-  //DDS.setFTWRegister(2000000);
-  //DDS.setPPFreq(1000000);
-  //DDS.setOSKAmp(1.0);
+  DDS.setFTWRegister(2000000);
+  DDS.setPPFreq(1000000);
+  DDS.setOSKAmp(1.0);
   
   //Set Freq, Amp, Phase for Profile Mode:
-  DDS.setFreq(100000000,0);
-  DDS.setAmp(1,0);
-  DDS.setPhase(0,0);
-  DDS.setFreq(20000000,1);
-  DDS.setAmp(1,1);
-  DDS.setPhase(180,1);
-  DDS.setProfile(0);
+//  DDS.setFreq(100000000,0);
+//  DDS.setAmp(1,0);
+//  DDS.setPhase(0,0);
+//  DDS.setFreq(20000000,1);
+//  DDS.setAmp(1,1);
+//  DDS.setPhase(180,1);
+//  DDS.setProfile(0);
 
   //Set Trigger Connections:
   delay (10);
@@ -154,11 +154,13 @@ void setFrequencyTriggeredFast() {
 void loop() {
 // Toggle pin 13
   PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // low to high
-  DDS.setProfile(0);
+  //DDS.setProfile(0);
+  DDS.setPPFreq(30000000);
   PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // high to low
   delay(1000);
   PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // low to high
-  DDS.setProfile(1);
+  //DDS.setProfile(1);
+  DDS.setPPFreq(40000000);
   PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // high to low
   delay(1000);
 }
