@@ -113,6 +113,12 @@ class AD9910
     //Write Register:
     void writeRegister(reg_t payload);
 
+    //helper function to reverse given byte
+    unsigned long reverse_byte(unsigned long byte_arg);
+    //unsigned char reverse_byte(unsigned char byte_arg);
+    //for debugging, can be deleted
+    void prntBits(unsigned long b, int n_bits);
+
   private:
     // Instance variables that hold pinout mapping
     // from arduino to DDS pins.
@@ -131,6 +137,7 @@ class AD9910
     void writeProfile(byte profile);
     // DDS frequency resolution
     double RESOLUTION;// = 4294967296; // sets resolution to 2^32 = 32 bits. Using type double to avoid confusion with integer division...
+    
 };
 
 //Inlined_functions:
