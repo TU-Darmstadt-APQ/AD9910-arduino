@@ -345,12 +345,12 @@ void AD9910::setPPFreq(uint32_t freq){
   _port_data_word_upper = (_fdw & 0xff00) << 4;
   _port_data_word = _port_data_word_lower | _port_data_word_upper;
   */
-  //_port_data_word = transformToPDW(freq);
+  _port_data_word = transformToPDW(freq);
 
   //Set parallel Port C:
   PIOB->PIO_SODR = PIO_SODR_P14;
-  //REG_PIOC_ODSR = _port_data_word;
-  REG_PIOC_ODSR = freq;
+  REG_PIOC_ODSR = _port_data_word;
+  //REG_PIOC_ODSR = freq;
   PIOB->PIO_CODR = PIO_CODR_P14;
 }
 
