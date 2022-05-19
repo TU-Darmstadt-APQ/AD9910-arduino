@@ -108,7 +108,7 @@ void setup() {
   DDS.initialize(ref_clk,divider, FM_gain, oskEnable, parallel_programming);
   //Set Frequency and Amplitude for ParallelPort Frequency Modification
   DDS.setFTWRegister(2000000);
-  DDS.setPPFreq(1000000);
+  DDS.setPPFreq(100000000);
   DDS.setOSKAmp(1.0);
   
   //Set Freq, Amp, Phase for Profile Mode:
@@ -141,9 +141,9 @@ void setup() {
 //  for(int i = 0; i < freq_len; i++){
 //    freqs[i] = (freq_start + i*freq_step) % freq_end;
 //  }
-
-  pdw_20 = DDS.transformToPDW(50000000);
-  pdw_10 = DDS.transformToPDW(210000000);
+//
+//  pdw_20 = DDS.transformToPDW(50000000);
+//  pdw_10 = DDS.transformToPDW(210000000);
 }
 
 //Inline function needs to be places here for correct compiling:
