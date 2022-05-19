@@ -108,7 +108,7 @@ void setup() {
   DDS.initialize(ref_clk,divider, FM_gain, oskEnable, parallel_programming);
   //Set Frequency and Amplitude for ParallelPort Frequency Modification
   DDS.setFTWRegister(2000000);
-  DDS.setPPFreq(1000000);
+  DDS.setPPFreq(100000000);
   DDS.setOSKAmp(1.0);
   
   //Set Freq, Amp, Phase for Profile Mode:
@@ -132,18 +132,18 @@ void setup() {
   PIOD->PIO_REHLSR = PIO_REHLSR_P3; // The interrupt source is a Rising Edge
   PIOD->PIO_IER = PIO_IER_P3;
 
-  //Array for sweeping frequencies
-  
-  int freq_start = 100000000;
-  int freq_end = 300000000;
-  int freq_step = 5000000;
-  
-  for(int i = 0; i < freq_len; i++){
-    freqs[i] = (freq_start + i*freq_step) % freq_end;
-  }
-
-  pdw_20 = DDS.transformToPDW(50000000);
-  pdw_10 = DDS.transformToPDW(210000000);
+//  //Array for sweeping frequencies
+//  
+//  int freq_start = 100000000;
+//  int freq_end = 300000000;
+//  int freq_step = 5000000;
+//  
+//  for(int i = 0; i < freq_len; i++){
+//    freqs[i] = (freq_start + i*freq_step) % freq_end;
+//  }
+//
+//  pdw_20 = DDS.transformToPDW(50000000);
+//  pdw_10 = DDS.transformToPDW(210000000);
 }
 
 //Inline function needs to be places here for correct compiling:
@@ -175,98 +175,107 @@ void setFrequencyTriggeredFast() {
 
 // Program Loop for Testing:
 
-void loop() {
-// Toggle pin 13
-  PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // low to high
-  //DDS.setProfile(0);
-  DDS.setPPFreqFast(pdw_20);
-  PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // high to low
-  delay(2000);
+//void loop() {
+//// Toggle pin 13
 //  PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // low to high
-//  //DDS.setProfile(1);
-//  DDS.setPPFreqFast(pdw_10);
+//  //DDS.setProfile(0);
+//  DDS.setPPFreqFast(pdw_20);
 //  PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // high to low
 //  delay(2000);
-
-//sweeping
-//DDS.setPPFreq(freqs[freq_iterator % freq_len]);
-//freq_iterator++;
-//delay(1000);
-}
+////  PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // low to high
+////  //DDS.setProfile(1);
+////  DDS.setPPFreqFast(pdw_10);
+////  PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // high to low
+////  delay(2000);
+//
+////sweeping
+////DDS.setPPFreq(freqs[freq_iterator % freq_len]);
+////freq_iterator++;
+////delay(1000);
+//}
 
 
 // Labscript Program loop:
-//void loop() {
-//  //Wait for new instruction starting with correct MARKER:
-//  if(Serial.available() > 0) {
-//    char x = Serial.read();
-//    if (x==MANUALMODEMARKER) {
-//      manualMode=true;
-//      bufferedMode=false;
-//    } else if (x==BUFFEREDMODEMARKER) {
-//      manualMode=false;
-//      bufferedMode=true;
-//      transitionToBuffered=true;
-//    } else if (x==AMPLITUDEMODEMARKER){
-//      //this is not really a mode but makes implementation easier
-//      manualMode=false;
-//      bufferedMode=false;
-//      amplitudeMode=true;
-//    }
-//  }
-//  
-//  // Start buffered Mode:
-//  while (bufferedMode == true) {
-//    
-//    //transition_to_buffered:
-//    while (transitionToBuffered == true) { //loop not necessary, left for conceptual reasons
-//      getDataFromPC(AD9910_PDW_array);
-//      replyToPC();
-//    }
-//    
-//    //Shot ongoing:
-//    while (dataTransmissionFinished == true) {
-//      setFrequencyTriggeredFast();
-//    }
-//    
-//    //transition_to_manual:
-//    while (transitionToManual == true) {
-//      sendFinishtoPC();
-//      transitionToManual = false;
-//      bufferedMode=false;
-//      manualMode=false;
-//    }
-//  }
-//  
-//  //Start manual Mode:
-//  while (manualMode == true) {
-//    getDataFromPC(AD9910_PDW_array);
-//    replyToPC();
-//    
-//    //Set frequency after all data has been received:
-//    if (dataTransmissionFinished == true) {
-//      DDS.setPPFreqFast(AD9910_PDW_array[0]);
-//      dataTransmissionFinished = false;
-//      bufferedMode=false; 
-//      manualMode=false;
-//    }
-//  }
-//
-//  //Start amplitude Mode:
-//  while(amplitudeMode == true) {
-//    
-//    getAmpFromPC(amplitude);
-//    replyToPC();
-//    //Set amplitude after all data has been received:
-//    if (dataTransmissionFinished == true) {
-//      DDS.setAmp(amplitude);
-//      //Serial.print(amp);
-//      dataTransmissionFinished = false;
-//      amplitudeMode=false;
-//      }
-//  }
-//  
-//}
+void loop() {
+  //Wait for new instruction starting with correct MARKER:
+  if(Serial.available() > 0) {
+    char x = Serial.read();
+    if (x==MANUALMODEMARKER) {
+      manualMode=true;
+      bufferedMode=false;
+    } else if (x==BUFFEREDMODEMARKER) {
+      manualMode=false;
+      bufferedMode=true;
+      transitionToBuffered=true;
+    } else if (x==AMPLITUDEMODEMARKER){
+      //this is not really a mode but makes implementation easier
+      manualMode=false;
+      bufferedMode=false;
+      amplitudeMode=true;
+    }
+  }
+  
+  // Start buffered Mode:
+  while (bufferedMode == true) {
+    
+    //transition_to_buffered:
+    while (transitionToBuffered == true) { //loop not necessary, left for conceptual reasons
+      getDataFromPC(AD9910_PDW_array);
+      replyToPC();
+      DDS.setPPFreq(10000000);
+      delay (10000);
+    }
+    
+    //Shot ongoing:
+    while (dataTransmissionFinished == true) {
+      
+      setFrequencyTriggeredFast();
+    }
+    
+    //transition_to_manual:
+    while (transitionToManual == true) {
+      sendFinishtoPC();
+      transitionToManual = false;
+      bufferedMode=false;
+      manualMode=false;
+    }
+  }
+  
+  //Start manual Mode:
+  while (manualMode == true) {
+    getDataFromPC(AD9910_PDW_array);
+    replyToPC();
+    DDS.setPPFreq(20000000);
+    delay (10000);
+    
+    //Set frequency after all data has been received:
+    if (dataTransmissionFinished == true) {
+      //DDS.setPPFreqFast(AD9910_PDW_array[0]);
+      DDS.setPPFreq(20000000);
+      delay (10000);
+      dataTransmissionFinished = false;
+      bufferedMode=false; 
+      manualMode=false;
+    }
+  }
+
+  //Start amplitude Mode:
+  while(amplitudeMode == true) {
+    
+    getAmpFromPC(amplitude);
+    replyToPC();
+    //Set amplitude after all data has been received:
+    if (dataTransmissionFinished == true) {
+      DDS.setAmp(amplitude);
+      DDS.setPPFreq(30000000);
+      delay (10000);
+      //Serial.print(amp);
+      dataTransmissionFinished = false;
+      amplitudeMode=false;
+      }
+  }
+  
+}
 
 //This function is necessary for transmission of Frequency, Amplitude (and Phase):
 // THIS VERSION IS CURRENTLY NOT USED
