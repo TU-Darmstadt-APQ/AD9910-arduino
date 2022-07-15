@@ -113,7 +113,7 @@ void setup() {
   
   //Set Freq, Amp, Phase for Profile Mode:
 //  DDS.setFreq(100000000,0);
-  DDS.setAmp(0.6,0);
+  DDS.setAmp(1.0,0);
 //  DDS.setPhase(0,0);
 //  DDS.setFreq(20000000,1);
 //  DDS.setAmp(1,1);
@@ -124,6 +124,10 @@ void setup() {
   delay (10);
   pinMode(TRIGGERIN, INPUT);
   pinMode(TRIGGEROUT, OUTPUT);
+  digitalWrite(TRIGGEROUT, LOW);
+  digitalWrite(TRIGGEROUT, HIGH);
+  digitalWrite(TRIGGEROUT, LOW);
+  digitalWrite(TRIGGEROUT, HIGH);
   digitalWrite(TRIGGEROUT, LOW);
 
   //Initialize Edge detection of Atmel SAM3X8E at Arduino Pin28( Port D.3):
@@ -154,7 +158,7 @@ void setFrequencyTriggeredFast() {
     if ((PIOD->PIO_ISR & PIO_ISR_P3) == PIO_ISR_P3) {
 
     // Toggle pin 13
-    //PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // low to high by using xor operation between ...?
+    PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // low to high by using xor operation between ...?
    
     //Setting Frequency via ParallelPort (as Inline Function):
     DDS.setPPFreqFast(AD9910_PDW_array[arrWriteIndex]);
@@ -168,7 +172,7 @@ void setFrequencyTriggeredFast() {
         dataTransmissionFinished = false;  //Comment out for test purposes with labscript at home
         arrWriteIndex = 0;
       }
-    //PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // high to low
+    PIOB->PIO_ODSR ^= PIO_ODSR_P27;  // high to low
     }
     
 }
