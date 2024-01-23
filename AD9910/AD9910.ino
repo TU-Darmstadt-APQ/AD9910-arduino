@@ -108,12 +108,12 @@ void setup() {
   DDS.initialize(ref_clk,divider, FM_gain, oskEnable, parallel_programming);
   //Set Frequency and Amplitude for ParallelPort Frequency Modification
   DDS.setFTWRegister(2000000);
-  DDS.setPPFreq(121000000);
-//  DDS.setOSKAmp(1.0);
+  DDS.setPPFreq(110000000);
+  //DDS.setOSKAmp(0.97);
   
   //Set Freq, Amp, Phase for Profile Mode:
 //  DDS.setFreq(100000000,0);
-  DDS.setAmp(1.0,0);
+  DDS.setAmp(1,0); //This is the Amplitude necessary to optimally drive the AOD? TODO:Check 23.01.24
 //  DDS.setPhase(0,0);
 //  DDS.setFreq(20000000,1);
 //  DDS.setAmp(1,1);
