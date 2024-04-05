@@ -113,7 +113,7 @@ void setup() {
   
   //Set Freq, Amp, Phase for Profile Mode:
 //  DDS.setFreq(100000000,0);
-  DDS.setAmp(1,0); //This is the Amplitude necessary to optimally drive the AOD? TODO:Check 23.01.24
+  DDS.setAmp(1,0); //This is the Amplitude necessary to optimally drive the AOD(23.01.24)
 //  DDS.setPhase(0,0);
 //  DDS.setFreq(20000000,1);
 //  DDS.setAmp(1,1);
